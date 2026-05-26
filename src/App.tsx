@@ -1,10 +1,20 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BaseLayout } from './layouts/BaseLayout';
+import { Home } from './pages/Home';
+import { Simulation } from './pages/Simulation';
+import { Result } from './pages/Result';
+
 function App() {
   return (
-    <>
-      <header>
-        <h1>Planejai</h1>
-      </header>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<BaseLayout />}>
+          <Route index element={<Home />} />
+          <Route path="simulacao" element={<Simulation />} />
+          <Route path="resultado/:id" element={<Result />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

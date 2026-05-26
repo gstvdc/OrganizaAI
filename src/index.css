@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Outfit:wght@100..900&display=swap');
+
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', system-ui, -apple-system, sans-serif;
+
+  /* Accent Lime Color (from Planirium) */
+  --color-accent-lime: #c5ff22;
+  --color-accent-lime-hover: #b0f000;
+  
+  /* Rich Purples/Violets */
+  --color-primary-50: #f5f3ff;
+  --color-primary-100: #ede9fe;
+  --color-primary-200: #ddd6fe;
+  --color-primary-300: #c084fc;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --color-primary-800: #5b21b6;
+  --color-primary-900: #4c1d95;
+
+  /* Dark Background space colors */
+  --color-space-950: #030014;
+  --color-space-900: #05021a;
+  --color-space-800: #090628;
+  --color-space-700: #120e3a;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-white font-sans antialiased selection:bg-accent-lime selection:text-black;
+    background-color: #030014;
+  }
+
+  button, [role="button"] {
+    @apply cursor-pointer;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism panel styling */
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-panel-hover {
+    @apply transition-all duration-300;
+  }
+  .glass-panel-hover:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 40px -10px rgba(197, 255, 34, 0.08);
+  }
+
+  /* Glassmorphism Input fields */
+  .glass-input {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    @apply rounded-xl py-3 px-4 text-white placeholder-slate-400 outline-none transition-all duration-200 focus:border-accent-lime/50 focus:ring-2 focus:ring-accent-lime/10;
+  }
+
+  /* Custom micro-animations */
+  @keyframes floatSlow {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(0.5deg); }
+  }
+  @keyframes floatMedium {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(-0.5deg); }
+  }
+  @keyframes pulseGlow {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.05); }
+  }
+
+  .animate-float-slow {
+    animation: floatSlow 6s ease-in-out infinite;
+  }
+  .animate-float-medium {
+    animation: floatMedium 5s ease-in-out infinite;
+  }
+  .animate-glow-pulse {
+    animation: pulseGlow 8s ease-in-out infinite;
+  }
+
+  /* Text gradient utility */
+  .text-glow-gradient {
+    @apply bg-gradient-to-r from-violet-400 via-pink-400 to-accent-lime bg-clip-text text-transparent;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
