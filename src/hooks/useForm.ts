@@ -131,6 +131,5 @@ export const useForm = () => {
     errors,
     updateField,
     validateStep,
-    setFormData,
   };
 };

@@ -108,3 +108,150 @@
 .animate-fadeIn {
   animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ═══════════ Page Transition Animations ═══════════ */
+
+/* Slide in from right (navigating forward) */
+@keyframes slideInFromRight {
+  0% {
+    transform: translateX(8%) scale(0.96);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Slide in from left (navigating back) */
+@keyframes slideInFromLeft {
+  0% {
+    transform: translateX(-8%) scale(0.96);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Slide out to the left (exiting forward) */
+@keyframes slideOut {
+  0% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-8%) scale(0.96);
+    opacity: 0;
+  }
+}
+
+/* Slide out to the right (exiting backward) */
+@keyframes slideOutRight {
+  0% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(8%) scale(0.96);
+    opacity: 0;
+  }
+}
+
+.page-slide-in-from-right {
+  animation: slideInFromRight 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.page-slide-in-from-left {
+  animation: slideInFromLeft 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.page-slide-out {
+  animation: slideOut 350ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.page-slide-out-right {
+  animation: slideOutRight 350ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ═══════════ Panel Transition — Home ↔ Simulation ═══════════ */
+
+/* Simulation slides in from full right width (spring overshoot feel) */
+@keyframes panelSlideIn {
+  0%   { transform: translateX(100%); opacity: 1; }
+  68%  { transform: translateX(-1.2%); opacity: 1; }
+  84%  { transform: translateX(0.6%); opacity: 1; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* Home page recedes to depth when simulation enters */
+@keyframes panelPushOut {
+  0%   { transform: translateX(0) scale(1); opacity: 1; }
+  100% { transform: translateX(-12%) scale(0.95); opacity: 0; }
+}
+
+/* Simulation exits to the right when user goes back home */
+@keyframes panelSlideOut {
+  0%   { transform: translateX(0); }
+  30%  { transform: translateX(2%); }
+  100% { transform: translateX(105%); }
+}
+
+/* Home re-emerges from depth when simulation exits */
+@keyframes panelExpandIn {
+  0%   { transform: translateX(-10%) scale(0.96); opacity: 0; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+.page-panel-slide-in {
+  animation: panelSlideIn 640ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.page-panel-push-out {
+  animation: panelPushOut 380ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.page-panel-slide-out {
+  animation: panelSlideOut 460ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.page-panel-expand-in {
+  animation: panelExpandIn 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ═══════════ Step Transitions — Simulation Form Steps ═══════════ */
+
+@keyframes stepSlideFromRight {
+  0%   { transform: translateX(5%) scale(0.99); opacity: 0; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+@keyframes stepSlideFromLeft {
+  0%   { transform: translateX(-5%) scale(0.99); opacity: 0; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+.step-slide-in-right {
+  animation: stepSlideFromRight 360ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.step-slide-in-left {
+  animation: stepSlideFromLeft 360ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ═══════════ Validation Error Shake ═══════════ */
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  18%       { transform: translateX(-5px); }
+  36%       { transform: translateX(5px); }
+  54%       { transform: translateX(-4px); }
+  72%       { transform: translateX(4px); }
+  90%       { transform: translateX(-2px); }
+}
+
+.animate-shake {
+  animation: shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+

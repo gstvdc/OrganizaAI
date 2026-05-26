@@ -1,72 +1,67 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { AiChat } from '../components/AiChat';
+import { ApiKeySetup } from '../components/ApiKeySetup';
 import { Button } from '../components/Button';
+import { useApiKey } from '../hooks/useApiKey';
 import { formatCurrency } from '../utils/formatters';
 import { generateFinancialDiagnosis } from '../services/gemini';
 import type { DiagnosisResponse, SimulationDetails } from '../services/gemini';
 
 export const Result: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { apiKey, hasApiKey, saveApiKey } = useApiKey();
 
-  // Initialize simulation state lazily from localStorage to avoid calling setSimulation in useEffect
   const [simulation] = useState<SimulationDetails | null>(() => {
     if (!id) return null;
-    const savedSim = localStorage.getItem(`simulation_${id}`);
-    return savedSim ? JSON.parse(savedSim) : null;
+    const raw = localStorage.getItem(`simulation_${id}`);
+    return raw ? JSON.parse(raw) : null;
   });
 
-  // Initialize diagnosis state lazily from cached diagnosis to avoid calling setDiagnosis in useEffect
   const [diagnosis, setDiagnosis] = useState<DiagnosisResponse | null>(() => {
     if (!id) return null;
-    const cachedDiag = localStorage.getItem(`diagnosis_${id}`);
-    return cachedDiag ? JSON.parse(cachedDiag) : null;
+    const raw = localStorage.getItem(`diagnosis_${id}`);
+    return raw ? JSON.parse(raw) : null;
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDiagnosis = async (simData: SimulationDetails) => {
+  const fetchDiagnosis = async (simData: SimulationDetails, key: string) => {
     setLoading(true);
     setError(null);
-
     try {
-      const result = await generateFinancialDiagnosis(simData);
+      const result = await generateFinancialDiagnosis(simData, key);
       setDiagnosis(result);
-
-      // Cache the result
       localStorage.setItem(`diagnosis_${simData.id}`, JSON.stringify(result));
-    } catch (err: unknown) {
+    } catch (err) {
       console.error(err);
       setError(
-        'Ocorreu um erro ao gerar a análise da inteligência artificial. Por favor, tente novamente.',
+        'Ocorreu um erro ao gerar a análise. Verifique se sua API Key é válida e tente novamente.',
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // Trigger api call if simulation exists and diagnosis is not loaded/cached yet
+  // Fetch when simulation loads and both key and simulation are present and no cached diagnosis
   useEffect(() => {
-    if (simulation && !diagnosis) {
-      const timer = setTimeout(() => {
-        fetchDiagnosis(simulation);
-      }, 0);
-      return () => clearTimeout(timer);
+    if (simulation && hasApiKey && !diagnosis) {
+      fetchDiagnosis(simulation, apiKey);
     }
-  }, [simulation, diagnosis]);
+  }, [simulation, hasApiKey, diagnosis, apiKey]);
 
-  const handleRetry = () => {
-    if (simulation) {
-      fetchDiagnosis(simulation);
+  const handleKeySave = (key: string) => {
+    saveApiKey(key);
+    if (simulation && !diagnosis) {
+      fetchDiagnosis(simulation, key);
     }
   };
 
   if (!simulation) {
     return (
       <div className="animate-fadeIn mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold text-white">
-          Simulação não encontrada
-        </h2>
+        <h2 className="text-2xl font-bold text-white">Simulação não encontrada</h2>
         <p className="mt-2 text-slate-400">
           O identificador fornecido não corresponde a nenhuma simulação ativa.
         </p>
@@ -79,7 +74,6 @@ export const Result: React.FC = () => {
 
   const { profile, finances } = simulation;
 
-  // Render score color dynamics with neon glow effects
   const getScoreColorClass = (score: number) => {
     if (score < 50)
       return 'text-rose-400 border-rose-500/20 bg-rose-500/5 shadow-[0_0_20px_rgba(244,63,94,0.15)]';
@@ -90,24 +84,21 @@ export const Result: React.FC = () => {
 
   return (
     <div className="animate-fadeIn mx-auto max-w-5xl space-y-8 px-4 py-12 sm:px-6 lg:px-8">
+
       {/* 1. Header Card */}
       <div className="glass-panel rounded-3xl p-6 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 -z-10 h-[150px] w-[150px] rounded-full bg-violet-600/10 blur-[45px]" />
-        
+
         <div className="flex flex-col items-start justify-between gap-4 border-b border-white/5 pb-6 md:flex-row md:items-center">
           <div>
             <span className="text-[10px] font-bold tracking-wider text-accent-lime uppercase">
               Simulação Realizada em {simulation.date}
             </span>
-            <h2 className="mt-1 text-3xl font-extrabold text-white">
-              Olá, {profile.name}!
-            </h2>
+            <h2 className="mt-1 text-3xl font-extrabold text-white">Olá, {profile.name}!</h2>
             <p className="mt-1 text-sm text-slate-400">
               {profile.occupation ? `${profile.occupation}, ` : ''}
               {profile.age} anos • Objetivo:{' '}
-              <span className="font-semibold text-accent-lime">
-                {profile.mainGoal}
-              </span>
+              <span className="font-semibold text-accent-lime">{profile.mainGoal}</span>
             </p>
           </div>
           <div className="text-left md:text-right">
@@ -123,18 +114,14 @@ export const Result: React.FC = () => {
         {/* Financial Balance Summary */}
         <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="rounded-2xl border border-white/5 bg-white/[0.01] p-6 hover:border-white/10 transition-colors">
-            <span className="mb-1 block text-xs font-semibold text-slate-400">
-              Receitas Totais
-            </span>
+            <span className="mb-1 block text-xs font-semibold text-slate-400">Receitas Totais</span>
             <span className="font-mono text-2xl font-bold text-emerald-400">
               {formatCurrency(finances.income.total)}
             </span>
           </div>
 
           <div className="rounded-2xl border border-white/5 bg-white/[0.01] p-6 hover:border-white/10 transition-colors">
-            <span className="mb-1 block text-xs font-semibold text-slate-400">
-              Gastos Totais
-            </span>
+            <span className="mb-1 block text-xs font-semibold text-slate-400">Gastos Totais</span>
             <span className="font-mono text-2xl font-bold text-rose-400">
               {formatCurrency(finances.totalExpenses)}
             </span>
@@ -164,7 +151,7 @@ export const Result: React.FC = () => {
           </div>
         </div>
 
-        {/* Dynamic Specific Savings Target Goal (2 to 12+ months indicator) */}
+        {/* Specific savings goal */}
         {finances.targetGoal && finances.targetGoal.name && (
           <div className="mt-8 border-t border-white/5 pt-8">
             <h4 className="text-base font-bold text-white mb-4">
@@ -185,33 +172,42 @@ export const Result: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex justify-between text-xs border-t border-white/5 pt-2.5">
-                  <span className="text-slate-400 font-semibold">Quanto precisa poupar por mês:</span>
+                  <span className="text-slate-400 font-semibold">
+                    Quanto precisa poupar por mês:
+                  </span>
                   <span className="font-extrabold text-accent-lime font-mono">
                     {formatCurrency(finances.targetGoal.monthlyTarget)}
                   </span>
                 </div>
               </div>
 
-              <div className={`p-4 rounded-xl border flex flex-col justify-center ${
-                finances.netBalance >= finances.targetGoal.monthlyTarget
-                  ? 'border-emerald-500/20 bg-emerald-500/5'
-                  : 'border-amber-500/20 bg-amber-500/5'
-              }`}>
+              <div
+                className={`p-4 rounded-xl border flex flex-col justify-center ${
+                  finances.netBalance >= finances.targetGoal.monthlyTarget
+                    ? 'border-emerald-500/20 bg-emerald-500/5'
+                    : 'border-amber-500/20 bg-amber-500/5'
+                }`}
+              >
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span>{finances.netBalance >= finances.targetGoal.monthlyTarget ? '✅' : '⚠️'}</span>
-                  <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                    finances.netBalance >= finances.targetGoal.monthlyTarget 
-                      ? 'text-emerald-400' 
-                      : 'text-amber-400'
-                  }`}>
-                    {finances.netBalance >= finances.targetGoal.monthlyTarget ? 'Viabilidade Positiva!' : 'Requer Ajustes'}
+                  <span>
+                    {finances.netBalance >= finances.targetGoal.monthlyTarget ? '✅' : '⚠️'}
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-wider ${
+                      finances.netBalance >= finances.targetGoal.monthlyTarget
+                        ? 'text-emerald-400'
+                        : 'text-amber-400'
+                    }`}
+                  >
+                    {finances.netBalance >= finances.targetGoal.monthlyTarget
+                      ? 'Viabilidade Positiva!'
+                      : 'Requer Ajustes'}
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   {finances.netBalance >= finances.targetGoal.monthlyTarget
                     ? `Parabéns! Sua sobra atual de ${formatCurrency(finances.netBalance)}/mês cobre os ${formatCurrency(finances.targetGoal.monthlyTarget)}/mês necessários para este objetivo.`
-                    : `Sua sobra de ${formatCurrency(finances.netBalance)}/mês é menor do que a meta necessária. Para alcançar, você precisará economizar mais ${formatCurrency(finances.targetGoal.monthlyTarget - finances.netBalance)}/mês ou adiar o prazo para ${Math.ceil(finances.targetGoal.value / Math.max(1, finances.netBalance))} meses.`
-                  }
+                    : `Sua sobra de ${formatCurrency(finances.netBalance)}/mês é menor do que a meta necessária. Para alcançar, você precisará economizar mais ${formatCurrency(finances.targetGoal.monthlyTarget - finances.netBalance)}/mês ou adiar o prazo para ${Math.ceil(finances.targetGoal.value / Math.max(1, finances.netBalance))} meses.`}
                 </p>
               </div>
             </div>
@@ -219,13 +215,18 @@ export const Result: React.FC = () => {
         )}
       </div>
 
-      {/* 2. IA Diagnosis Box */}
+      {/* 2. Diagnosis section */}
       <div className="space-y-6">
         <h3 className="text-xl font-bold text-white">
           Diagnóstico e Recomendações OrganizAI
         </h3>
 
-        {/* LOADING STATE - SKELETON */}
+        {/* No API key — show setup */}
+        {!hasApiKey && !diagnosis && (
+          <ApiKeySetup onSave={handleKeySave} error={error} />
+        )}
+
+        {/* Loading skeleton */}
         {loading && (
           <div className="animate-pulse space-y-6 rounded-3xl border border-white/5 bg-white/[0.01] p-6 shadow-2xl">
             <div className="flex flex-col items-center gap-6 md:flex-row">
@@ -243,22 +244,33 @@ export const Result: React.FC = () => {
           </div>
         )}
 
-        {/* ERROR STATE */}
-        {error && !loading && (
-          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6 text-center">
-            <p className="mb-4 text-sm text-rose-400">
-              {error}
-            </p>
-            <Button onClick={handleRetry}>Tentar Novamente</Button>
+        {/* Error state (key already set but call failed) */}
+        {error && hasApiKey && !loading && (
+          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6">
+            <p className="mb-4 text-sm text-rose-400">{error}</p>
+            <div className="flex gap-3">
+              <Button onClick={() => simulation && fetchDiagnosis(simulation, apiKey)}>
+                Tentar Novamente
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  // Allow re-configuring the key
+                  setError(null);
+                  saveApiKey('');
+                }}
+              >
+                Trocar API Key
+              </Button>
+            </div>
           </div>
         )}
 
-        {/* DIAGNOSIS RESULTS CONTAINER */}
+        {/* Results */}
         {diagnosis && !loading && (
           <div className="space-y-8">
             {/* Score & General Diagnostic */}
             <div className="flex flex-col items-center gap-8 rounded-3xl border border-white/5 bg-white/[0.01] p-6 shadow-2xl md:flex-row">
-              {/* Score visualizer */}
               <div className="flex-shrink-0 text-center">
                 <div
                   className={`flex h-28 w-28 flex-col items-center justify-center rounded-full border-2 ${getScoreColorClass(diagnosis.saudeFinanceiraScore)}`}
@@ -271,31 +283,23 @@ export const Result: React.FC = () => {
                   </span>
                 </div>
               </div>
-
-              {/* Text diagnosis */}
               <div className="flex-1 space-y-3">
-                <h4 className="text-lg font-bold text-white">
-                  Análise Financeira Geral
-                </h4>
+                <h4 className="text-lg font-bold text-white">Análise Financeira Geral</h4>
                 <p className="text-sm leading-relaxed whitespace-pre-line text-slate-300">
                   {diagnosis.diagnosticoGeral}
                 </p>
               </div>
             </div>
 
-            {/* Pros and Cons lists */}
+            {/* Pros and Cons */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {/* Pontos Fortes */}
               <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-6 text-emerald-400">
                 <h4 className="mb-4 flex items-center gap-2 text-sm font-bold">
                   <span>✓</span> Pontos Fortes Financeiros
                 </h4>
                 <ul className="space-y-3">
                   {diagnosis.pontosFortes.map((item, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-start gap-2 text-xs leading-relaxed text-slate-300"
-                    >
+                    <li key={idx} className="flex items-start gap-2 text-xs leading-relaxed text-slate-300">
                       <span className="text-emerald-400">•</span>
                       <span>{item}</span>
                     </li>
@@ -303,17 +307,13 @@ export const Result: React.FC = () => {
                 </ul>
               </div>
 
-              {/* Oportunidades de Melhoria */}
               <div className="rounded-2xl border border-amber-500/15 bg-amber-500/5 p-6 text-amber-400">
                 <h4 className="mb-4 flex items-center gap-2 text-sm font-bold">
                   <span>⚠</span> Oportunidades de Melhoria
                 </h4>
                 <ul className="space-y-3">
                   {diagnosis.oportunidadesMelhoria.map((item, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-start gap-2 text-xs leading-relaxed text-slate-300"
-                    >
+                    <li key={idx} className="flex items-start gap-2 text-xs leading-relaxed text-slate-300">
                       <span className="text-amber-400">•</span>
                       <span>{item}</span>
                     </li>
@@ -322,28 +322,20 @@ export const Result: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Plan timeline */}
+            {/* Action Plan */}
             {diagnosis.planoAcao.length > 0 && (
               <div className="rounded-3xl border border-white/5 bg-white/[0.01] p-6 shadow-2xl">
                 <h4 className="mb-6 text-lg font-bold text-white">
                   Seu Plano de Ação Passo a Passo
                 </h4>
-
                 <div className="relative space-y-6 before:absolute before:inset-y-1 before:left-3.5 before:w-0.5 before:bg-violet-600/30">
                   {diagnosis.planoAcao.map((step, idx) => (
-                    <div
-                      key={idx}
-                      className="animate-fadeIn relative flex gap-4"
-                    >
-                      {/* Badge Icon */}
+                    <div key={idx} className="animate-fadeIn relative flex gap-4">
                       <div className="z-10 flex h-8 w-8 items-center justify-center rounded-full bg-accent-lime text-xs font-bold text-space-950 shadow-[0_0_10px_rgba(197,255,34,0.3)]">
                         {idx + 1}
                       </div>
-
                       <div className="flex-1 rounded-xl border border-white/5 bg-white/[0.02] p-4 hover:border-white/10 transition-colors">
-                        <h5 className="text-sm font-bold text-white">
-                          {step.titulo}
-                        </h5>
+                        <h5 className="text-sm font-bold text-white">{step.titulo}</h5>
                         <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
                           {step.descricao}
                         </p>
@@ -357,10 +349,21 @@ export const Result: React.FC = () => {
         )}
       </div>
 
-      {/* 3. Footer Action Buttons */}
+      {/* 3. AI Chat — only after diagnosis is ready */}
+      {diagnosis && !loading && (
+        <div>
+          <h3 className="mb-4 text-xl font-bold text-white">Converse com a OrganizAI</h3>
+          <AiChat simulation={simulation} diagnosis={diagnosis} />
+        </div>
+      )}
+
+      {/* 4. Footer actions */}
       <div className="flex flex-col justify-end gap-4 border-t border-white/5 pt-6 sm:flex-row">
+        <Link to="/historico">
+          <Button variant="outline">Ver Histórico</Button>
+        </Link>
         <Link to="/simulacao">
-          <Button variant="outline">Fazer Nova Simulação</Button>
+          <Button variant="outline">Nova Simulação</Button>
         </Link>
         <Link to="/">
           <Button>Ir para o Início</Button>

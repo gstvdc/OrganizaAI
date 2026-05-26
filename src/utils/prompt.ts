@@ -1,46 +1,5 @@
+import type { SimulationDetails } from '../types';
 import { formatCurrency } from './formatters';
-
-interface SimulationDetails {
-  profile: {
-    name: string;
-    age: number;
-    occupation: string;
-    mainGoal: string;
-  };
-  finances: {
-    income: {
-      salary: number;
-      additionalIncome: number;
-      total: number;
-    };
-    fixedExpenses: {
-      rentOrMortgage: number;
-      utilities: number;
-      health: number;
-      education: number;
-      total: number;
-    };
-    variableExpenses: {
-      food: number;
-      leisure: number;
-      transport: number;
-      otherExpenses: number;
-      total: number;
-    };
-    savingsAndDebts: {
-      amountSaved: number;
-      currentDebts: number;
-    };
-    targetGoal?: {
-      name: string;
-      value: number;
-      months: number;
-      monthlyTarget: number;
-    };
-    totalExpenses: number;
-    netBalance: number;
-  };
-}
 
 export const buildFinancialPrompt = (data: SimulationDetails): string => {
   const { profile, finances } = data;

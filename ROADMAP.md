@@ -40,7 +40,7 @@ Utilize esta lista para acompanhar o progresso do desenvolvimento do projeto. Ma
 - [x] **23. Exibindo os Insights da IA na Tela de Resultado**
 
 ### 💬 Fase 5: Histórico e Recursos Extras
-- [/] **24. Histórico de Simulações e Chat com IA** (A seguir)
+- [x] **24. Histórico de Simulações e Chat com IA**
 
 ---
 
