@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
+import { DailyTip } from '../components/DailyTip';
 
 const AVATAR_GUSTAVO =
   'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80';
@@ -106,7 +107,7 @@ const ROADMAP_ITEMS = [
   },
   {
     title: '✓ Diagnóstico com IA',
-    desc: 'Integração com Google Gemini para gerar insights e plano de ação personalizados.',
+    desc: 'Integração com Google Gemini para gerar insights e plano de ação personalizados — sem configuração necessária.',
   },
   {
     title: '✓ Histórico & Chat IA',
@@ -203,6 +204,13 @@ export const Home: React.FC = () => {
             <ChecklistWidgetContent />
           </div>
         </div>
+
+        {/* Daily Tip */}
+        {localStorage.getItem('simulations') && (
+          <div className="mt-12 mx-auto max-w-2xl">
+            <DailyTip />
+          </div>
+        )}
 
         {/* Tech stack */}
         <div className="mt-20 border-t border-white/5 pt-12">

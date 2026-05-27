@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Button } from './Button';
 
-const NAV_LINKS = [
+const BASE_NAV_LINKS = [
   { to: '/', label: 'Início', exact: true },
   { to: '/simulacao', label: 'Simulação', exact: false },
   { to: '/historico', label: 'Histórico', exact: false },
@@ -12,6 +12,14 @@ export const Header: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const isSimulacao = location.pathname === '/simulacao';
+
+  const [hasEnoughSimulations] = useState(
+    () => JSON.parse(localStorage.getItem('simulations') ?? '[]').length >= 2,
+  );
+
+  const NAV_LINKS = hasEnoughSimulations
+    ? [...BASE_NAV_LINKS, { to: '/comparar', label: 'Comparar', exact: false }]
+    : BASE_NAV_LINKS;
 
   return (
     <header className="sticky top-0 z-40 w-full bg-transparent">

@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from './Button';
-import { IconSparkles, IconArrowRight, IconLock } from './icons';
+import { IconSparkles, IconArrowRight } from './icons';
 import { sendChatMessage } from '../services/gemini';
-import { useApiKey } from '../hooks/useApiKey';
 import type { SimulationDetails, DiagnosisResponse } from '../types';
 
 interface Message {
@@ -20,10 +19,10 @@ const SUGGESTED_QUESTIONS = [
 interface AiChatProps {
   simulation: SimulationDetails;
   diagnosis: DiagnosisResponse;
+  isDemoMode?: boolean;
 }
 
-export const AiChat: React.FC<AiChatProps> = ({ simulation, diagnosis }) => {
-  const { apiKey, hasApiKey } = useApiKey();
+export const AiChat: React.FC<AiChatProps> = ({ simulation, diagnosis, isDemoMode = false }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,13 +49,7 @@ export const AiChat: React.FC<AiChatProps> = ({ simulation, diagnosis }) => {
     setLoading(true);
 
     try {
-      const response = await sendChatMessage(
-        messages,
-        trimmed,
-        simulation,
-        diagnosis,
-        apiKey,
-      );
+      const response = await sendChatMessage(messages, trimmed, simulation, diagnosis);
       setMessages([...nextHistory, { role: 'model', text: response }]);
     } catch {
       setError('Não foi possível obter resposta. Tente novamente.');
@@ -72,18 +65,14 @@ export const AiChat: React.FC<AiChatProps> = ({ simulation, diagnosis }) => {
     }
   };
 
-  if (!hasApiKey) {
+  if (isDemoMode) {
     return (
-      <div className="glass-panel rounded-3xl p-8 flex flex-col items-center justify-center gap-4 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-slate-500 border border-white/10">
-          <IconLock className="h-6 w-6" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-slate-300">Chat indisponível</p>
-          <p className="mt-1 text-xs text-slate-500 max-w-xs">
-            Configure sua API Key do Gemini na seção de diagnóstico para usar o chat.
-          </p>
-        </div>
+      <div className="glass-panel rounded-3xl p-8 flex flex-col items-center justify-center gap-3 text-center">
+        <IconSparkles className="h-8 w-8 text-slate-600" />
+        <p className="text-sm font-semibold text-slate-300">Chat indisponível no modo demo</p>
+        <p className="text-xs text-slate-500 max-w-xs">
+          Configure a <code className="font-mono">VITE_GEMINI_API_KEY</code> para conversar com a IA sobre sua situação financeira real.
+        </p>
       </div>
     );
   }
@@ -121,7 +110,6 @@ export const AiChat: React.FC<AiChatProps> = ({ simulation, diagnosis }) => {
               Tenho acesso ao seu diagnóstico completo. Pergunte o que quiser sobre sua vida financeira.
             </p>
 
-            {/* Suggested questions */}
             <div className="mt-5 flex flex-wrap justify-center gap-2">
               {SUGGESTED_QUESTIONS.map((q) => (
                 <button

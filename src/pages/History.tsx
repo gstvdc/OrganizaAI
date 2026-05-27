@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
+import { ScoreEvolutionChart } from '../components/ScoreEvolutionChart';
+import { ChecklistProgressBadge } from '../components/ChecklistProgressBadge';
 import { IconChartBar, IconArrowRight, IconSparkles, IconTrendingUp, IconNoEntry } from '../components/icons';
 import { formatCurrency } from '../utils/formatters';
-import type { SimulationDetails } from '../types';
+import type { SimulationDetails, DiagnosisResponse } from '../types';
 
-type StoredSimulation = SimulationDetails & { saudeFinanceiraScore?: number };
+type StoredSimulation = SimulationDetails;
 
 function loadSimulations(): StoredSimulation[] {
   try {
     const raw = localStorage.getItem('simulations');
     if (!raw) return [];
     const list: StoredSimulation[] = JSON.parse(raw);
-    return list.slice().reverse(); // newest first
+    return list.slice().reverse();
   } catch {
     return [];
   }
@@ -29,6 +31,15 @@ function loadCachedScore(id: string): number | null {
   }
 }
 
+function loadCachedDiagnosis(id: string): DiagnosisResponse | null {
+  try {
+    const raw = localStorage.getItem(`diagnosis_${id}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 function deleteSimulation(id: string, onDone: () => void) {
   try {
     const raw = localStorage.getItem('simulations');
@@ -38,6 +49,7 @@ function deleteSimulation(id: string, onDone: () => void) {
     }
     localStorage.removeItem(`simulation_${id}`);
     localStorage.removeItem(`diagnosis_${id}`);
+    localStorage.removeItem(`checklist_${id}`);
   } catch {
     // ignore
   }
@@ -52,6 +64,7 @@ function deleteAll(onDone: () => void) {
       list.forEach((s) => {
         localStorage.removeItem(`simulation_${s.id}`);
         localStorage.removeItem(`diagnosis_${s.id}`);
+        localStorage.removeItem(`checklist_${s.id}`);
       });
     }
     localStorage.removeItem('simulations');
@@ -82,6 +95,7 @@ const ScoreBadge: React.FC<{ score: number | null }> = ({ score }) => {
 };
 
 export const History: React.FC = () => {
+  const navigate = useNavigate();
   const [simulations, setSimulations] = useState<StoredSimulation[]>(loadSimulations);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
 
@@ -151,10 +165,17 @@ export const History: React.FC = () => {
         </div>
       </div>
 
+      {/* Score Evolution Chart */}
+      <div className="mb-8">
+        <ScoreEvolutionChart simulations={[...simulations].reverse()} />
+      </div>
+
       {/* Simulation cards */}
       <div className="space-y-4">
         {simulations.map((sim) => {
           const score = loadCachedScore(sim.id);
+          const diagnosis = loadCachedDiagnosis(sim.id);
+          const totalSteps = diagnosis?.planoAcao?.length ?? 0;
           const { profile, finances } = sim;
           const isPositive = finances.netBalance >= 0;
 
@@ -163,7 +184,6 @@ export const History: React.FC = () => {
               key={sim.id}
               className="glass-panel rounded-2xl p-5 transition-all duration-200 hover:border-white/15 relative overflow-hidden"
             >
-              {/* Subtle background tint based on health */}
               <div
                 className={`absolute top-0 right-0 -z-10 h-[120px] w-[120px] rounded-full blur-[50px] ${isPositive ? 'bg-accent-lime/5' : 'bg-rose-500/5'}`}
               />
@@ -180,6 +200,9 @@ export const History: React.FC = () => {
                     {profile.occupation && `${profile.occupation} · `}
                     {profile.mainGoal}
                   </p>
+                  {totalSteps > 0 && (
+                    <ChecklistProgressBadge simulationId={sim.id} totalSteps={totalSteps} />
+                  )}
                 </div>
 
                 {/* Right: key metrics */}
@@ -221,12 +244,26 @@ export const History: React.FC = () => {
 
               {/* Footer actions */}
               <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-4">
-                <button
-                  onClick={() => deleteSimulation(sim.id, refresh)}
-                  className="text-xs text-slate-500 transition-colors hover:text-rose-400"
-                >
-                  Excluir
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => deleteSimulation(sim.id, refresh)}
+                    className="text-xs text-slate-500 transition-colors hover:text-rose-400"
+                  >
+                    Excluir
+                  </button>
+                  <button
+                    onClick={() => navigate(`/simulacao?edit=${sim.id}`)}
+                    className="text-xs text-slate-500 transition-colors hover:text-accent-lime"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => navigate(`/comparar?a=${sim.id}`)}
+                    className="text-xs text-slate-500 transition-colors hover:text-violet-400"
+                  >
+                    Comparar
+                  </button>
+                </div>
                 <Link to={`/resultado/${sim.id}`}>
                   <Button size="sm" className="gap-1.5">
                     Ver Diagnóstico

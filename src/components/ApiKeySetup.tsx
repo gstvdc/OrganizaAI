@@ -1,3 +1,5 @@
+// Não utilizado desde a Fase 5.5.
+// O usuário não precisa mais configurar a API Key manualmente.
 import React, { useState } from 'react';
 import { Button } from './Button';
 import { IconLock, IconArrowRight, IconSparkles } from './icons';

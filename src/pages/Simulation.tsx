@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { CurrencyInput } from '../components/CurrencyInput';
 import { FormProgress } from '../components/FormProgress';
@@ -34,7 +34,53 @@ const SHAKE_DURATION_MS = 450;
 
 export const Simulation: React.FC = () => {
   const navigate = useNavigate();
-  const { formData, errors, updateField, validateStep } = useForm();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
+
+  const preloadData = React.useMemo((): Partial<import('../hooks/useForm').SimulationData> | undefined => {
+    if (!editId) return undefined;
+    try {
+      const raw = localStorage.getItem(`simulation_${editId}`);
+      if (!raw) return undefined;
+      const sim = JSON.parse(raw);
+      const { profile, finances } = sim;
+      return {
+        name: profile.name,
+        age: String(profile.age),
+        occupation: profile.occupation,
+        mainGoal: profile.mainGoal,
+        salary: formatCurrency(finances.income.salary),
+        additionalIncome: formatCurrency(finances.income.additionalIncome),
+        rentOrMortgage: formatCurrency(finances.fixedExpenses.rentOrMortgage),
+        utilities: formatCurrency(finances.fixedExpenses.utilities),
+        health: formatCurrency(finances.fixedExpenses.health),
+        education: formatCurrency(finances.fixedExpenses.education),
+        food: formatCurrency(finances.variableExpenses.food),
+        leisure: formatCurrency(finances.variableExpenses.leisure),
+        transport: formatCurrency(finances.variableExpenses.transport),
+        otherExpenses: formatCurrency(finances.variableExpenses.otherExpenses),
+        amountSaved: formatCurrency(finances.savingsAndDebts.amountSaved),
+        currentDebts: formatCurrency(finances.savingsAndDebts.currentDebts),
+        targetGoalName: finances.targetGoal?.name ?? '',
+        targetGoalValue: finances.targetGoal ? formatCurrency(finances.targetGoal.value) : 'R$ 0,00',
+        targetGoalMonths: finances.targetGoal ? String(finances.targetGoal.months) : '',
+      };
+    } catch {
+      return undefined;
+    }
+  }, [editId]);
+
+  const originalDate = React.useMemo(() => {
+    if (!editId) return '';
+    try {
+      const raw = localStorage.getItem(`simulation_${editId}`);
+      return raw ? JSON.parse(raw).date : '';
+    } catch {
+      return '';
+    }
+  }, [editId]);
+
+  const { formData, errors, updateField, validateStep } = useForm(preloadData);
   const [currentStep, setCurrentStep] = useState(0);
   const [stepDir, setStepDir] = useState<'forward' | 'back'>('forward');
   const [shakeForm, setShakeForm] = useState(false);
@@ -233,6 +279,11 @@ export const Simulation: React.FC = () => {
       {/* ═══════════ FORM WIZARD STEPS ═══════════ */}
       {currentStep > 0 && (
         <div className={shakeForm ? 'animate-shake' : ''}>
+          {editId && originalDate && (
+            <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-400">
+              ✏️ Editando simulação de {originalDate} — um novo registro será criado ao finalizar
+            </div>
+          )}
           <div className="animate-fadeIn glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 -z-10 h-[180px] w-[180px] rounded-full bg-violet-600/5 blur-[55px]" />
 

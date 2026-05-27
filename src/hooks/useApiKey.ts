@@ -1,3 +1,6 @@
+// Não utilizado desde a Fase 5.5.
+// A API Key do Gemini agora é lida diretamente de import.meta.env.VITE_GEMINI_API_KEY
+// em src/services/gemini.ts, sem necessidade de input do usuário.
 import { useCallback, useState } from 'react';
 
 const STORAGE_KEY = 'organizai_gemini_api_key';

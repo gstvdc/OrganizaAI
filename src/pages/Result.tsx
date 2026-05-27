@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import { AiChat } from '../components/AiChat';
-import { ApiKeySetup } from '../components/ApiKeySetup';
+import { ActionPlanChecklist } from '../components/ActionPlanChecklist';
 import { Button } from '../components/Button';
-import { useApiKey } from '../hooks/useApiKey';
 import { formatCurrency } from '../utils/formatters';
 import { generateFinancialDiagnosis } from '../services/gemini';
-import type { DiagnosisResponse, SimulationDetails } from '../services/gemini';
+import { exportDiagnosisPdf } from '../utils/exportPdf';
+import { MOCK_DIAGNOSIS } from '../data/mockDiagnosis';
+import type { DiagnosisResponse, SimulationDetails } from '../types';
 
 export const Result: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { apiKey, hasApiKey, saveApiKey } = useApiKey();
 
   const [simulation] = useState<SimulationDetails | null>(() => {
     if (!id) return null;
@@ -26,37 +27,42 @@ export const Result: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
-  const fetchDiagnosis = async (simData: SimulationDetails, key: string) => {
+  const hasApiKey = Boolean(
+    (import.meta.env.VITE_GEMINI_API_KEY as string | undefined)?.trim() ||
+      localStorage.getItem('organizai_gemini_api_key')?.trim(),
+  );
+
+  const fetchDiagnosis = async (simData: SimulationDetails) => {
+    if (!hasApiKey) {
+      setDiagnosis(MOCK_DIAGNOSIS);
+      setIsDemoMode(true);
+      localStorage.setItem(`diagnosis_${simData.id}`, JSON.stringify(MOCK_DIAGNOSIS));
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const result = await generateFinancialDiagnosis(simData, key);
+      const result = await generateFinancialDiagnosis(simData);
       setDiagnosis(result);
       localStorage.setItem(`diagnosis_${simData.id}`, JSON.stringify(result));
     } catch (err) {
       console.error(err);
-      setError(
-        'Ocorreu um erro ao gerar a análise. Verifique se sua API Key é válida e tente novamente.',
-      );
+      setDiagnosis(MOCK_DIAGNOSIS);
+      setIsDemoMode(true);
+      localStorage.setItem(`diagnosis_${simData.id}`, JSON.stringify(MOCK_DIAGNOSIS));
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch when simulation loads and both key and simulation are present and no cached diagnosis
   useEffect(() => {
-    if (simulation && hasApiKey && !diagnosis) {
-      fetchDiagnosis(simulation, apiKey);
-    }
-  }, [simulation, hasApiKey, diagnosis, apiKey]);
-
-  const handleKeySave = (key: string) => {
-    saveApiKey(key);
     if (simulation && !diagnosis) {
-      fetchDiagnosis(simulation, key);
+      fetchDiagnosis(simulation);
     }
-  };
+  }, [simulation]);
 
   if (!simulation) {
     return (
@@ -221,9 +227,10 @@ export const Result: React.FC = () => {
           Diagnóstico e Recomendações OrganizAI
         </h3>
 
-        {/* No API key — show setup */}
-        {!hasApiKey && !diagnosis && (
-          <ApiKeySetup onSave={handleKeySave} error={error} />
+        {isDemoMode && (
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-400">
+            ⚠ Diagnóstico de demonstração — configure <code className="font-mono">VITE_GEMINI_API_KEY</code> no <code className="font-mono">.env.local</code> para obter uma análise real personalizada.
+          </div>
         )}
 
         {/* Loading skeleton */}
@@ -244,25 +251,13 @@ export const Result: React.FC = () => {
           </div>
         )}
 
-        {/* Error state (key already set but call failed) */}
-        {error && hasApiKey && !loading && (
+        {/* Error state */}
+        {error && !loading && (
           <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6">
             <p className="mb-4 text-sm text-rose-400">{error}</p>
-            <div className="flex gap-3">
-              <Button onClick={() => simulation && fetchDiagnosis(simulation, apiKey)}>
-                Tentar Novamente
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  // Allow re-configuring the key
-                  setError(null);
-                  saveApiKey('');
-                }}
-              >
-                Trocar API Key
-              </Button>
-            </div>
+            <Button onClick={() => simulation && fetchDiagnosis(simulation)}>
+              Tentar Novamente
+            </Button>
           </div>
         )}
 
@@ -285,9 +280,30 @@ export const Result: React.FC = () => {
               </div>
               <div className="flex-1 space-y-3">
                 <h4 className="text-lg font-bold text-white">Análise Financeira Geral</h4>
-                <p className="text-sm leading-relaxed whitespace-pre-line text-slate-300">
-                  {diagnosis.diagnosticoGeral}
-                </p>
+                <div className="space-y-2">
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => (
+                        <p className="mb-3 text-sm leading-relaxed text-slate-300 last:mb-0">
+                          {children}
+                        </p>
+                      ),
+                      strong: ({ children }) => (
+                        <strong className="font-bold text-white">{children}</strong>
+                      ),
+                      ul: ({ children }) => (
+                        <ul className="mt-2 list-inside list-disc space-y-1 text-slate-400">
+                          {children}
+                        </ul>
+                      ),
+                      li: ({ children }) => (
+                        <li className="text-sm leading-relaxed">{children}</li>
+                      ),
+                    }}
+                  >
+                    {diagnosis.diagnosticoGeral}
+                  </ReactMarkdown>
+                </div>
               </div>
             </div>
 
@@ -322,28 +338,12 @@ export const Result: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Plan */}
+            {/* Action Plan Checklist */}
             {diagnosis.planoAcao.length > 0 && (
-              <div className="rounded-3xl border border-white/5 bg-white/[0.01] p-6 shadow-2xl">
-                <h4 className="mb-6 text-lg font-bold text-white">
-                  Seu Plano de Ação Passo a Passo
-                </h4>
-                <div className="relative space-y-6 before:absolute before:inset-y-1 before:left-3.5 before:w-0.5 before:bg-violet-600/30">
-                  {diagnosis.planoAcao.map((step, idx) => (
-                    <div key={idx} className="animate-fadeIn relative flex gap-4">
-                      <div className="z-10 flex h-8 w-8 items-center justify-center rounded-full bg-accent-lime text-xs font-bold text-space-950 shadow-[0_0_10px_rgba(197,255,34,0.3)]">
-                        {idx + 1}
-                      </div>
-                      <div className="flex-1 rounded-xl border border-white/5 bg-white/[0.02] p-4 hover:border-white/10 transition-colors">
-                        <h5 className="text-sm font-bold text-white">{step.titulo}</h5>
-                        <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
-                          {step.descricao}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <ActionPlanChecklist
+                simulationId={simulation.id}
+                steps={diagnosis.planoAcao}
+              />
             )}
           </div>
         )}
@@ -353,12 +353,29 @@ export const Result: React.FC = () => {
       {diagnosis && !loading && (
         <div>
           <h3 className="mb-4 text-xl font-bold text-white">Converse com a OrganizAI</h3>
-          <AiChat simulation={simulation} diagnosis={diagnosis} />
+          <AiChat simulation={simulation} diagnosis={diagnosis} isDemoMode={isDemoMode} />
         </div>
       )}
 
       {/* 4. Footer actions */}
-      <div className="flex flex-col justify-end gap-4 border-t border-white/5 pt-6 sm:flex-row">
+      <div className="flex flex-wrap justify-end gap-4 border-t border-white/5 pt-6">
+        {diagnosis && !loading && (
+          <Button
+            variant="outline"
+            onClick={async () => {
+              setIsExporting(true);
+              await exportDiagnosisPdf(simulation, diagnosis);
+              setIsExporting(false);
+            }}
+            className="gap-2"
+            disabled={isExporting}
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {isExporting ? 'Gerando...' : 'Exportar PDF'}
+          </Button>
+        )}
         <Link to="/historico">
           <Button variant="outline">Ver Histórico</Button>
         </Link>

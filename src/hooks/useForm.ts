@@ -55,19 +55,12 @@ const initialData: SimulationData = {
   targetGoalMonths: '',
 };
 
-export const useForm = () => {
-  const [formData, setFormData] = useState<SimulationData>(initialData);
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof SimulationData, string>>
-  >({});
+export const useForm = (preloadData?: Partial<SimulationData>) => {
+  const [formData, setFormData] = useState<SimulationData>({ ...initialData, ...preloadData });
+  const [errors, setErrors] = useState<Partial<Record<keyof SimulationData, string>>>({});
 
   const updateField = (field: keyof SimulationData, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-
-    // Clear error for this field if user types
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -93,20 +86,17 @@ export const useForm = () => {
         }
       }
       if (!formData.mainGoal.trim()) {
-        newErrors.mainGoal =
-          'Por favor, selecione ou insira o seu principal objetivo.';
+        newErrors.mainGoal = 'Por favor, selecione ou insira o seu principal objetivo.';
       }
     }
 
     if (step === 5) {
-      // If user filled in a goal name, make sure value and months are valid
       if (formData.targetGoalName.trim()) {
         const valueNum = parseFloat(
           formData.targetGoalValue.replace(/[^\d,]/g, '').replace(',', '.'),
         );
         if (isNaN(valueNum) || valueNum <= 0) {
-          newErrors.targetGoalValue =
-            'Insira um valor maior que R$ 0,00 para o objetivo.';
+          newErrors.targetGoalValue = 'Insira um valor maior que R$ 0,00 para o objetivo.';
         }
 
         const monthsNum = parseInt(formData.targetGoalMonths, 10);
@@ -116,8 +106,7 @@ export const useForm = () => {
           monthsNum <= 0 ||
           monthsNum > 360
         ) {
-          newErrors.targetGoalMonths =
-            'Insira um prazo válido em meses (ex: 2 a 360).';
+          newErrors.targetGoalMonths = 'Insira um prazo válido em meses (ex: 2 a 360).';
         }
       }
     }
@@ -126,10 +115,5 @@ export const useForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  return {
-    formData,
-    errors,
-    updateField,
-    validateStep,
-  };
+  return { formData, errors, updateField, validateStep };
 };

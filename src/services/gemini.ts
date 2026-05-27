@@ -5,6 +5,11 @@ import { formatCurrency } from '../utils/formatters';
 
 export type { SimulationDetails, DiagnosisResponse };
 
+const getApiKey = (): string =>
+  (import.meta.env.VITE_GEMINI_API_KEY as string | undefined)?.trim() ||
+  localStorage.getItem('organizai_gemini_api_key')?.trim() ||
+  '';
+
 const sanitizeJsonResponse = (text: string): string => {
   let cleaned = text.trim();
   if (cleaned.startsWith('```')) {
@@ -17,9 +22,8 @@ const sanitizeJsonResponse = (text: string): string => {
 
 export const generateFinancialDiagnosis = async (
   simulationData: SimulationDetails,
-  apiKey: string,
 ): Promise<DiagnosisResponse> => {
-  const ai = new GoogleGenerativeAI(apiKey);
+  const ai = new GoogleGenerativeAI(getApiKey());
   const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
   const prompt = buildFinancialPrompt(simulationData);
 
@@ -64,9 +68,8 @@ export const sendChatMessage = async (
   newMessage: string,
   simulation: SimulationDetails,
   diagnosis: DiagnosisResponse,
-  apiKey: string,
 ): Promise<string> => {
-  const ai = new GoogleGenerativeAI(apiKey);
+  const ai = new GoogleGenerativeAI(getApiKey());
   const model = ai.getGenerativeModel({
     model: 'gemini-2.5-flash',
     systemInstruction: buildChatSystemPrompt(simulation, diagnosis),

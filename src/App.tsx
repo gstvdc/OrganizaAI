@@ -4,6 +4,7 @@ import { Home } from './pages/Home';
 import { Simulation } from './pages/Simulation';
 import { Result } from './pages/Result';
 import { History } from './pages/History';
+import { Compare } from './pages/Compare';
 import { NotFound } from './pages/NotFound';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
           <Route path="simulacao" element={<Simulation />} />
           <Route path="historico" element={<History />} />
           <Route path="resultado/:id" element={<Result />} />
+          <Route path="comparar" element={<Compare />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
