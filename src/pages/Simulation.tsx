@@ -6,6 +6,7 @@ import { FormProgress } from '../components/FormProgress';
 import { FormStep } from '../components/FormStep';
 import {
   IconUser,
+  IconCalendar,
   IconBriefcase,
   IconChartBar,
   IconCalculator,
@@ -317,7 +318,6 @@ export const Simulation: React.FC = () => {
                             type="text"
                             value={formData.name}
                             onChange={(e) => updateField('name', e.target.value)}
-                            placeholder="Ex: Gustavo Constante"
                             className="w-full glass-input pr-4 pl-10"
                           />
                         </div>
@@ -331,15 +331,11 @@ export const Simulation: React.FC = () => {
                           Idade
                         </label>
                         <div className="relative">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 font-mono text-sm font-bold text-slate-500 group-focus-within:text-accent-lime/60 transition-colors">
-                            #
-                          </span>
                           <input
                             type="number"
                             value={formData.age}
                             onChange={(e) => updateField('age', e.target.value)}
-                            placeholder="Ex: 25"
-                            className="w-full glass-input pr-4 pl-10"
+                            className="w-full glass-input pr-4 pl-4"
                           />
                         </div>
                         {errors.age && (
@@ -359,7 +355,6 @@ export const Simulation: React.FC = () => {
                             type="text"
                             value={formData.occupation}
                             onChange={(e) => updateField('occupation', e.target.value)}
-                            placeholder="Ex: Desenvolvedor, Estudante, Autônomo"
                             className="w-full glass-input pr-4 pl-10"
                           />
                         </div>
@@ -545,7 +540,6 @@ export const Simulation: React.FC = () => {
                             type="text"
                             value={formData.targetGoalName}
                             onChange={(e) => updateField('targetGoalName', e.target.value)}
-                            placeholder="Ex: Viagem para o Chile"
                             className="glass-input"
                           />
                         </div>
@@ -580,7 +574,6 @@ export const Simulation: React.FC = () => {
                             type="number"
                             value={formData.targetGoalMonths}
                             onChange={(e) => updateField('targetGoalMonths', e.target.value)}
-                            placeholder="Ex: 12"
                             className="glass-input"
                           />
                           {errors.targetGoalMonths && (

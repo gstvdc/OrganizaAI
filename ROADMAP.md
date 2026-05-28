@@ -88,7 +88,7 @@
 
 ---
 
-### 🔒 Fase 5.5: Backend Proxy — Gemini sem API Key do Usuário
+### ✅ Fase 5.5: Backend Proxy — Gemini sem API Key do Usuário (CONCLUÍDA)
 
 **Objetivo desta fase:** o usuário abre o site e usa direto, sem configurar nada. A chave do Gemini fica guardada no servidor (Vercel) e nunca é exposta no browser. Isso é feito criando dois endpoints serverless na pasta `api/` que funcionam como proxy entre o frontend e a API do Google Gemini.
 
@@ -474,11 +474,11 @@
 
 ### ✅ Fase 6: Engajamento e Acompanhamento do Usuário
 
-> **Pré-requisito:** a Fase 5.5 deve estar completa e funcionando antes de iniciar esta fase. Todos os itens abaixo assumem que `src/services/gemini.ts` já não recebe `apiKey` como parâmetro, e que `Result.tsx` e `AiChat.tsx` já foram atualizados.
+> **Pré-requisito:** ✅ Fase 5.5 concluída. O Gemini está funcionando via Vercel Functions com a chave configurada na Vercel. Pode iniciar esta fase diretamente.
 
 ---
 
-- [x] **30. Checklist Interativa do Plano de Ação**
+- [ ] **30. Checklist Interativa do Plano de Ação**
 
   **Objetivo:** Converter os itens do `planoAcao[]` retornados pelo Gemini em checkboxes interativos na página de Resultado, com progresso salvo no localStorage por simulação.
 
@@ -604,7 +604,7 @@
 
 ---
 
-- [x] **31. Gráfico de Evolução do Score de Saúde Financeira**
+- [ ] **31. Gráfico de Evolução do Score de Saúde Financeira**
 
   **Objetivo:** Seção no Histórico mostrando a evolução do `saudeFinanceiraScore` ao longo das simulações.
 
@@ -638,7 +638,7 @@
 
 ---
 
-- [x] **32. Renderização de Markdown no Diagnóstico Geral**
+- [ ] **32. Renderização de Markdown no Diagnóstico Geral**
 
   **Objetivo:** Renderizar corretamente o Markdown que o Gemini retorna em `diagnosticoGeral` (negrito, listas, quebras de linha).
 
@@ -674,7 +674,7 @@
 
 ---
 
-- [x] **33. Comparação Lado a Lado de Duas Simulações**
+- [ ] **33. Comparação Lado a Lado de Duas Simulações**
 
   **Objetivo:** Página `/comparar` onde o usuário seleciona duas simulações e vê um diff visual.
 
@@ -708,7 +708,7 @@
 
 ---
 
-- [x] **34. Editar Simulação Existente**
+- [ ] **34. Editar Simulação Existente**
 
   **Objetivo:** Reabrir uma simulação salva, editar os valores e gerar novo diagnóstico sem preencher tudo do zero.
 
@@ -734,11 +734,11 @@
 
 ### 🚀 Fase 7: Produto, Distribuição e Experiência Avançada
 
-> **Pré-requisito:** Fases 5.5 e 6 completas. Todos os serviços de IA usam o `gemini.ts` já atualizado — sem `apiKey` como parâmetro em nenhuma função.
+> **Pré-requisito:** ✅ Fase 5.5 concluída. Fase 6 deve estar completa antes de iniciar esta fase.
 
 ---
 
-- [x] **35. Dicas Financeiras Diárias com Gemini**
+- [ ] **35. Dicas Financeiras Diárias com Gemini**
 
   **Objetivo:** Card na Home com dica financeira gerada automaticamente pelo Gemini, baseada no perfil da última simulação. Cache de 1 dia no localStorage.
 
@@ -805,7 +805,7 @@
 
 ---
 
-- [x] **36. Exportar Diagnóstico como PDF**
+- [ ] **36. Exportar Diagnóstico como PDF**
 
   **Objetivo:** Botão "Exportar PDF" na página de Resultado que gera PDF com o diagnóstico completo (texto selecionável, não screenshot).
 
@@ -851,7 +851,7 @@
 
 ---
 
-- [x] **37. PWA — Instalação como App**
+- [ ] **37. PWA — Instalação como App**
 
   **Objetivo:** Tornar o OrganizAI instalável no celular/desktop como PWA.
 
@@ -940,8 +940,8 @@
 ```
 /
 ├── api/
-│   ├── diagnose.ts             ← NOVO (Fase 5.5)
-│   └── chat.ts                 ← NOVO (Fase 5.5)
+│   ├── diagnose.ts             ← ✅ CRIADO (Fase 5.5)
+│   └── chat.ts                 ← ✅ CRIADO (Fase 5.5)
 ├── public/
 │   ├── manifest.json           ← NOVO (Fase 7)
 │   ├── icon-192.png            ← NOVO (Fase 7)
@@ -949,7 +949,7 @@
 ├── src/
 │   ├── components/
 │   │   ├── ActionPlanChecklist.tsx    ← NOVO (Fase 6)
-│   │   ├── AiChat.tsx                ← MODIFICADO (Fase 5.5)
+│   │   ├── AiChat.tsx                ← ✅ MODIFICADO (Fase 5.5)
 │   │   ├── ApiKeySetup.tsx           ← não removido, apenas não renderizado
 │   │   ├── Button.tsx
 │   │   ├── ChecklistProgressBadge.tsx ← NOVO (Fase 6)
@@ -973,15 +973,15 @@
 │   │   └── Simulation.tsx           ← MODIFICADO (Fase 6)
 │   ├── services/
 │   │   ├── dailyTip.ts              ← NOVO (Fase 7)
-│   │   └── gemini.ts                ← MODIFICADO (Fase 5.5)
+│   │   └── gemini.ts                ← ✅ MODIFICADO (Fase 5.5)
 │   ├── types/index.ts
 │   └── utils/
 │       ├── exportPdf.ts             ← NOVO (Fase 7)
 │       ├── formatters.ts
 │       └── prompt.ts                ← INALTERADO
-├── .env.example                     ← MODIFICADO (Fase 5.5)
+├── .env.example                     ← ✅ MODIFICADO (Fase 5.5)
 ├── .env.local                       ← GEMINI_API_KEY (não commitar)
-├── vercel.json                      ← NOVO (Fase 5.5)
+├── vercel.json                      ← ✅ CRIADO (Fase 5.5)
 └── vite.config.ts                   ← MODIFICADO (Fase 7)
 ```
 

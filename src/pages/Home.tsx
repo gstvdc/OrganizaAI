@@ -129,11 +129,33 @@ const FEATURES = [
 
 export const Home: React.FC = () => {
   return (
-    <div className="relative overflow-hidden pt-12 pb-24 sm:pt-20 sm:pb-32">
+    <div className="relative pt-12 pb-24 sm:pt-20 sm:pb-32">
+
+      {/* Desktop widgets — outside max-w-7xl so viewport never clips them */}
+      <div className="hidden lg:block glass-panel absolute left-6 xl:left-12 top-[18%] z-10 w-65 rounded-3xl p-4 shadow-2xl animate-float-slow bg-space-950/40 -rotate-6 hover:rotate-0 hover:scale-102 hover:z-30 transition-all duration-300">
+        <CallWidgetContent />
+        <div className="absolute -bottom-6 left-6 z-30 inline-flex items-center gap-1">
+          <IconCursor className="h-4.5 w-4.5 text-[#ff9f1c] drop-shadow-md animate-bounce" />
+          <div className="rounded-full bg-[#ff9f1c] px-3 py-1 text-[9px] font-extrabold text-black shadow-md uppercase tracking-wider">
+            Gustavo (Usuário)
+          </div>
+        </div>
+      </div>
+
+      <div className="hidden lg:block glass-panel absolute right-6 xl:right-12 top-[28%] z-10 w-70 rounded-3xl p-5 shadow-2xl animate-float-medium bg-space-950/40 rotate-6 hover:rotate-0 hover:scale-102 hover:z-30 transition-all duration-300">
+        <ChecklistWidgetContent />
+        <div className="absolute -bottom-6 right-6 z-30 inline-flex items-center gap-1">
+          <IconCursor className="h-4.5 w-4.5 text-[#fff200] drop-shadow-md animate-bounce" />
+          <div className="rounded-full bg-[#fff200] px-3 py-1 text-[9px] font-extrabold text-black shadow-md uppercase tracking-wider">
+            IA OrganizAI
+          </div>
+        </div>
+      </div>
+
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* Hero */}
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-[550px] py-12 w-full">
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-137.5 py-12 w-full">
 
           <div className="text-center space-y-6 max-w-3xl mx-auto z-20 flex flex-col items-center">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-semibold text-slate-300 backdrop-blur-md">
@@ -148,13 +170,13 @@ export const Home: React.FC = () => {
                   {HERO_AVATARS.map((src, i) => (
                     <img
                       key={i}
-                      className="inline-block h-5.5 w-5.5 rounded-full ring-2 ring-[#030014]"
+                      className="inline-block h-5.5 w-5.5 rounded-full ring-2 ring-space-950"
                       src={src}
                       alt=""
                     />
                   ))}
                 </div>
-                <span className="text-[10px] font-bold text-[#c5ff22]">+2k</span>
+                <span className="text-[10px] font-bold text-accent-lime">+2k</span>
               </span>
               <span className="italic font-display font-light text-slate-200">inteligência</span>{' '}
               <br />
@@ -162,7 +184,7 @@ export const Home: React.FC = () => {
               <span className="text-glow-gradient">futuro financeiro!</span>
             </h1>
 
-            <p className="text-sm text-slate-400 max-w-xl leading-relaxed mx-auto">
+            <p className="text-sm text-white/80 max-w-xl leading-relaxed mx-auto drop-shadow-sm">
               Mapeie suas finanças em minutos e receba um diagnóstico completo gerado por IA — com
               score de saúde financeira, pontos fortes e um plano de ação personalizado.
             </p>
@@ -178,27 +200,6 @@ export const Home: React.FC = () => {
                   Ver Histórico
                 </Button>
               </Link>
-            </div>
-          </div>
-
-          {/* Desktop widgets */}
-          <div className="hidden lg:block glass-panel absolute left-[-60px] xl:left-[-140px] top-[15%] z-10 w-[260px] rounded-3xl p-4 shadow-2xl animate-float-slow bg-space-950/40 rotate-[-6deg] hover:rotate-0 hover:scale-102 hover:z-30 transition-all duration-300">
-            <CallWidgetContent />
-            <div className="absolute -bottom-6 left-6 z-30 inline-flex items-center gap-1">
-              <IconCursor className="h-4.5 w-4.5 text-[#ff9f1c] drop-shadow-md animate-bounce" />
-              <div className="rounded-full bg-[#ff9f1c] px-3 py-1 text-[9px] font-extrabold text-black shadow-md uppercase tracking-wider">
-                Gustavo (Usuário)
-              </div>
-            </div>
-          </div>
-
-          <div className="hidden lg:block glass-panel absolute right-[-60px] xl:right-[-140px] bottom-[12%] z-10 w-[280px] rounded-3xl p-5 shadow-2xl animate-float-medium bg-space-950/40 rotate-[6deg] hover:rotate-0 hover:scale-102 hover:z-30 transition-all duration-300">
-            <ChecklistWidgetContent />
-            <div className="absolute -bottom-6 right-6 z-30 inline-flex items-center gap-1">
-              <IconCursor className="h-4.5 w-4.5 text-[#fff200] drop-shadow-md animate-bounce" />
-              <div className="rounded-full bg-[#fff200] px-3 py-1 text-[9px] font-extrabold text-black shadow-md uppercase tracking-wider">
-                IA OrganizAI
-              </div>
             </div>
           </div>
         </div>
@@ -220,44 +221,46 @@ export const Home: React.FC = () => {
           </div>
         )}
 
-        {/* Features */}
-        <div id="como-funciona" className="mt-24">
-          <div className="text-center mb-12">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3">
-              Como funciona
-            </p>
-            <h2 className="text-2xl font-extrabold text-white sm:text-3xl">
-              Da simulação ao plano de ação
-            </h2>
-            <p className="mt-3 text-sm text-slate-400 max-w-xl mx-auto">
-              Tudo que você precisa para entender e melhorar sua saúde financeira, em um só lugar.
-            </p>
+        {/* Features + CTA — dark glass container so content reads over the gradient */}
+        <div className="mt-24 rounded-3xl bg-black/30 backdrop-blur-lg px-6 py-10 sm:px-10">
+          <div id="como-funciona">
+            <div className="text-center mb-12">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-3">
+                Como funciona
+              </p>
+              <h2 className="text-2xl font-extrabold text-white sm:text-3xl">
+                Da simulação ao plano de ação
+              </h2>
+              <p className="mt-3 text-sm text-white/70 max-w-xl mx-auto">
+                Tudo que você precisa para entender e melhorar sua saúde financeira, em um só lugar.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+              {FEATURES.map(({ icon, title, desc, color }) => (
+                <div
+                  key={title}
+                  className="rounded-2xl border border-white/15 bg-white/7 p-6 transition-all duration-300 hover:scale-[1.02] hover:bg-white/11 hover:border-white/25"
+                >
+                  <div className={`mb-4 ${color}`}>{icon}</div>
+                  <h3 className="mb-2 font-bold text-white">{title}</h3>
+                  <p className="text-xs leading-relaxed text-white/70">{desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-            {FEATURES.map(({ icon, title, desc, color, border, bg }) => (
-              <div
-                key={title}
-                className={`rounded-2xl border ${border} ${bg} p-6 transition-all duration-300 hover:scale-[1.02]`}
-              >
-                <div className={`mb-4 ${color}`}>{icon}</div>
-                <h3 className="mb-2 font-bold text-white">{title}</h3>
-                <p className="text-xs leading-relaxed text-slate-400">{desc}</p>
-              </div>
-            ))}
+          {/* CTA final */}
+          <div className="mt-16 text-center">
+            <Link to="/simulacao">
+              <Button size="lg" variant="primary">
+                Fazer minha primeira simulação
+              </Button>
+            </Link>
+            <p className="mt-3 text-xs text-white/50">
+              Gratuito · Sem cadastro · Dados salvos localmente
+            </p>
           </div>
-        </div>
-
-        {/* CTA final */}
-        <div className="mt-20 text-center">
-          <Link to="/simulacao">
-            <Button size="lg" variant="primary">
-              Fazer minha primeira simulação
-            </Button>
-          </Link>
-          <p className="mt-3 text-xs text-slate-600">
-            Gratuito · Sem cadastro · Dados salvos localmente
-          </p>
         </div>
 
       </div>

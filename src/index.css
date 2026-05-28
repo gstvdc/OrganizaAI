@@ -32,6 +32,7 @@
   body {
     @apply bg-slate-950 text-white font-sans antialiased selection:bg-accent-lime selection:text-black;
     background-color: #030014;
+    overflow-x: hidden;
   }
 
   button, [role="button"] {
@@ -62,15 +63,11 @@
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
     @apply rounded-xl py-3 px-4 text-white outline-none transition-all duration-200 focus:border-accent-lime/50 focus:ring-2 focus:ring-accent-lime/10;
+  }
 
-    &::placeholder {
-      color: #94a3b8; /* slate-400 */
-      opacity: 1;
-    }
-    &::-webkit-input-placeholder {
-      color: #94a3b8;
-      opacity: 1;
-    }
+  .glass-input::placeholder {
+    color: #94a3b8;
+    opacity: 1;
   }
 
   /* Custom micro-animations */
