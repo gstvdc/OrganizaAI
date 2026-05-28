@@ -8,11 +8,13 @@ const API_BASE = import.meta.env.DEV ? 'http://localhost:3000' : '';
 
 export const generateFinancialDiagnosis = async (
   simulationData: SimulationDetails,
+  signal?: AbortSignal,
 ): Promise<DiagnosisResponse> => {
   const response = await fetch(`${API_BASE}/api/diagnose`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt: buildFinancialPrompt(simulationData) }),
+    signal,
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));

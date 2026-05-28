@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { AiChat } from '../components/AiChat';
@@ -26,34 +26,31 @@ export const Result: React.FC = () => {
   });
 
   const [loading, setLoading] = useState(() => !!id && !localStorage.getItem(`diagnosis_${id}`));
-  const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
-  const fetchCalledRef = useRef(false);
-
-  const fetchDiagnosis = async (simData: SimulationDetails) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await generateFinancialDiagnosis(simData);
-      setDiagnosis(result);
-      setIsDemoMode(false);
-      localStorage.setItem(`diagnosis_${simData.id}`, JSON.stringify(result));
-    } catch (err) {
-      console.error(err);
-      setDiagnosis(MOCK_DIAGNOSIS);
-      setIsDemoMode(true);
-      localStorage.setItem(`diagnosis_${simData.id}`, JSON.stringify(MOCK_DIAGNOSIS));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    if (simulation && !diagnosis && !fetchCalledRef.current) {
-      fetchCalledRef.current = true;
-      fetchDiagnosis(simulation);
-    }
+    if (!simulation || diagnosis) return;
+    const controller = new AbortController();
+    const { signal } = controller;
+    generateFinancialDiagnosis(simulation, signal)
+      .then((result) => {
+        if (signal.aborted) return;
+        setDiagnosis(result);
+        setIsDemoMode(false);
+        localStorage.setItem(`diagnosis_${simulation.id}`, JSON.stringify(result));
+      })
+      .catch((err) => {
+        if (signal.aborted) return;
+        console.error(err);
+        setDiagnosis(MOCK_DIAGNOSIS);
+        setIsDemoMode(true);
+        localStorage.setItem(`diagnosis_${simulation.id}`, JSON.stringify(MOCK_DIAGNOSIS));
+      })
+      .finally(() => {
+        if (!signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
   }, [simulation]);
 
   if (!simulation) {
@@ -187,9 +184,6 @@ export const Result: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span>
-                    {finances.netBalance >= finances.targetGoal.monthlyTarget ? '✅' : '⚠️'}
-                  </span>
                   <span
                     className={`text-[10px] font-bold uppercase tracking-wider ${
                       finances.netBalance >= finances.targetGoal.monthlyTarget
@@ -221,7 +215,7 @@ export const Result: React.FC = () => {
 
         {isDemoMode && (
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-400">
-            ⚠ Diagnóstico de demonstração — o serviço de IA não está disponível no momento. Os dados exibidos são ilustrativos.
+            Diagnóstico de demonstração — o serviço de IA não está disponível no momento. Os dados exibidos são ilustrativos.
           </div>
         )}
 
@@ -240,16 +234,6 @@ export const Result: React.FC = () => {
               <div className="h-28 rounded-xl bg-white/5" />
               <div className="h-28 rounded-xl bg-white/5" />
             </div>
-          </div>
-        )}
-
-        {/* Error state */}
-        {error && !loading && (
-          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6">
-            <p className="mb-4 text-sm text-rose-400">{error}</p>
-            <Button onClick={() => simulation && fetchDiagnosis(simulation)}>
-              Tentar Novamente
-            </Button>
           </div>
         )}
 
@@ -302,8 +286,8 @@ export const Result: React.FC = () => {
             {/* Pros and Cons */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-6 text-emerald-400">
-                <h4 className="mb-4 flex items-center gap-2 text-sm font-bold">
-                  <span>✓</span> Pontos Fortes Financeiros
+                <h4 className="mb-4 text-sm font-bold">
+                  Pontos Fortes Financeiros
                 </h4>
                 <ul className="space-y-3">
                   {diagnosis.pontosFortes.map((item, idx) => (
@@ -316,8 +300,8 @@ export const Result: React.FC = () => {
               </div>
 
               <div className="rounded-2xl border border-amber-500/15 bg-amber-500/5 p-6 text-amber-400">
-                <h4 className="mb-4 flex items-center gap-2 text-sm font-bold">
-                  <span>⚠</span> Oportunidades de Melhoria
+                <h4 className="mb-4 text-sm font-bold">
+                  Oportunidades de Melhoria
                 </h4>
                 <ul className="space-y-3">
                   {diagnosis.oportunidadesMelhoria.map((item, idx) => (
