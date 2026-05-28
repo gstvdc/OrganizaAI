@@ -1,73 +1,68 @@
-# React + TypeScript + Vite
+# OrganizAI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Diagnóstico financeiro completo gerado por IA — gratuito e sem cadastro.
 
-Currently, two official plugins are available:
+**[organiz-ai.vercel.app](https://organiz-ai.vercel.app)**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## O que é
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+OrganizAI é uma aplicação web que permite mapear toda a sua situação financeira em minutos e receber um diagnóstico personalizado gerado pelo Google Gemini. O resultado inclui um score de saúde financeira, pontos fortes, oportunidades de melhoria e um plano de ação prático.
 
-## Expanding the ESLint configuration
+## Funcionalidades
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Simulação guiada** — 6 passos para registrar receitas, gastos fixos, gastos variáveis, reservas e dívidas
+- **Diagnóstico com IA** — análise completa via Google Gemini com score, insights e plano de ação
+- **Histórico de simulações** — gráfico de evolução do score ao longo do tempo
+- **Checklist interativa** — acompanhe o progresso do plano de ação
+- **Comparação** — veja duas simulações lado a lado
+- **Exportação em PDF** — salve seu diagnóstico completo
+- **PWA** — instalável no celular, funciona offline
+- **Sem cadastro** — dados armazenados localmente no navegador
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Stack
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+| Camada | Tecnologia |
+|---|---|
+| Framework | React 19 + TypeScript |
+| Build | Vite |
+| Estilo | Tailwind CSS v4 |
+| Roteamento | React Router v7 |
+| IA | Google Gemini API |
+| Gráficos | Recharts |
+| PDF | jsPDF |
+| Deploy | Vercel |
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Rodando localmente
+
+```bash
+# Instalar dependências
+npm install
+
+# Configurar variável de ambiente
+echo "VITE_GEMINI_API_KEY=sua_chave_aqui" > .env.local
+
+# Iniciar servidor de desenvolvimento
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Variáveis de ambiente
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Variável | Descrição |
+|---|---|
+| `VITE_GEMINI_API_KEY` | Chave da API do Google Gemini |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Scripts
+
+```bash
+npm run dev       # Servidor de desenvolvimento
+npm run build     # Build de produção
+npm run preview   # Preview do build
+npm run lint      # Verificar código
+npm run format    # Formatar com Prettier
 ```
+
+---
+
+Feito por [Gustavo Constante](https://github.com/gustavoconstante)
