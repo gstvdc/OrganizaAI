@@ -128,7 +128,7 @@ export const Compare: React.FC = () => {
             <select
               value={id}
               onChange={(e) => setId(e.target.value)}
-              className="w-full glass-input bg-transparent text-sm"
+              className="w-full glass-input pl-4 bg-transparent text-sm"
             >
               <option value="">Selecionar simulação...</option>
               {allSimulations

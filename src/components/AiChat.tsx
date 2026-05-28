@@ -183,7 +183,7 @@ export const AiChat: React.FC<AiChatProps> = ({ simulation, diagnosis, isDemoMod
             onKeyDown={handleKeyDown}
             placeholder="Pergunte sobre sua situação financeira… (Enter para enviar)"
             rows={1}
-            className="flex-1 resize-none rounded-xl glass-input py-2.5 text-xs leading-relaxed focus:ring-1 focus:ring-accent-lime/30"
+            className="flex-1 resize-none rounded-xl glass-input pl-4 py-2.5 text-xs leading-relaxed focus:ring-1 focus:ring-accent-lime/30"
             style={{ maxHeight: '96px' }}
           />
           <Button

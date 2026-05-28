@@ -6,7 +6,6 @@ import { FormProgress } from '../components/FormProgress';
 import { FormStep } from '../components/FormStep';
 import {
   IconUser,
-  IconCalendar,
   IconBriefcase,
   IconChartBar,
   IconCalculator,
@@ -149,7 +148,7 @@ export const Simulation: React.FC = () => {
   const hasGoal = formData.targetGoalName.trim() !== '' && goalVal > 0 && goalMonths > 0;
 
   const handleSubmit = () => {
-    const simulationId = Math.random().toString(36).substring(2, 11);
+    const simulationId = crypto.randomUUID();
 
     const newSimulation = {
       id: simulationId,
@@ -331,14 +330,11 @@ export const Simulation: React.FC = () => {
                           Idade
                         </label>
                         <div className="relative">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500 group-focus-within:text-accent-lime/60 transition-colors">
-                            <IconCalendar className="h-4 w-4" />
-                          </span>
                           <input
                             type="number"
                             value={formData.age}
                             onChange={(e) => updateField('age', e.target.value)}
-                            className="w-full glass-input pr-4 pl-10"
+                            className="w-full glass-input pr-4 pl-4"
                           />
                         </div>
                         {errors.age && (
@@ -543,7 +539,7 @@ export const Simulation: React.FC = () => {
                             type="text"
                             value={formData.targetGoalName}
                             onChange={(e) => updateField('targetGoalName', e.target.value)}
-                            className="glass-input"
+                            className="glass-input pl-4"
                           />
                         </div>
 
@@ -577,7 +573,7 @@ export const Simulation: React.FC = () => {
                             type="number"
                             value={formData.targetGoalMonths}
                             onChange={(e) => updateField('targetGoalMonths', e.target.value)}
-                            className="glass-input"
+                            className="glass-input pl-4"
                           />
                           {errors.targetGoalMonths && (
                             <span className="mt-1 text-[10px] font-medium text-red-500">
