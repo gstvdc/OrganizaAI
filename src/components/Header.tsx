@@ -28,6 +28,7 @@ export const Header: React.FC = () => {
           ? 'bg-space-950/95 backdrop-blur-lg'
           : 'bg-transparent'
       }`}
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       <div className="py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
