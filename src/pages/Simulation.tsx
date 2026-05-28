@@ -331,11 +331,14 @@ export const Simulation: React.FC = () => {
                           Idade
                         </label>
                         <div className="relative">
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500 group-focus-within:text-accent-lime/60 transition-colors">
+                            <IconCalendar className="h-4 w-4" />
+                          </span>
                           <input
                             type="number"
                             value={formData.age}
                             onChange={(e) => updateField('age', e.target.value)}
-                            className="w-full glass-input pr-4 pl-4"
+                            className="w-full glass-input pr-4 pl-10"
                           />
                         </div>
                         {errors.age && (
