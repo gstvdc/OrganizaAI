@@ -164,8 +164,12 @@ export const MeshGradientBackground: React.FC = () => {
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
+      // Use the canvas's actual CSS size so the WebGL viewport matches
+      // the element exactly — including safe areas on iOS with viewport-fit=cover
+      const w = canvas.offsetWidth || window.innerWidth;
+      const h = canvas.offsetHeight || window.innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
       gl.viewport(0, 0, canvas.width, canvas.height);
     };
 
