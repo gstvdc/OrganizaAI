@@ -30,23 +30,13 @@ export const Result: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
 
-  const hasApiKey = Boolean(
-    (import.meta.env.VITE_GEMINI_API_KEY as string | undefined)?.trim() ||
-      localStorage.getItem('organizai_gemini_api_key')?.trim(),
-  );
-
   const fetchDiagnosis = async (simData: SimulationDetails) => {
-    if (!hasApiKey) {
-      setDiagnosis(MOCK_DIAGNOSIS);
-      setIsDemoMode(true);
-      localStorage.setItem(`diagnosis_${simData.id}`, JSON.stringify(MOCK_DIAGNOSIS));
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
       const result = await generateFinancialDiagnosis(simData);
       setDiagnosis(result);
+      setIsDemoMode(false);
       localStorage.setItem(`diagnosis_${simData.id}`, JSON.stringify(result));
     } catch (err) {
       console.error(err);
@@ -229,7 +219,7 @@ export const Result: React.FC = () => {
 
         {isDemoMode && (
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-400">
-            ⚠ Diagnóstico de demonstração — configure <code className="font-mono">VITE_GEMINI_API_KEY</code> no <code className="font-mono">.env.local</code> para obter uma análise real personalizada.
+            ⚠ Diagnóstico de demonstração — o serviço de IA não está disponível no momento. Os dados exibidos são ilustrativos.
           </div>
         )}
 

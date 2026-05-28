@@ -1,12 +1,41 @@
-# OrganizAI - Educação Financeira com IA Generativa
+# OrganizAI — Educação Financeira com IA Generativa
 
-Este projeto é uma aplicação de educação financeira que utiliza Inteligência Artificial Generativa (Google Gemini) para fornecer diagnósticos, simulando cenários financeiros de usuários e gerando relatórios de insights e conselhos personalizados.
+> **📌 LEIA ANTES DE COMEÇAR — INSTRUÇÕES PARA O CLAUDE DA IDE**
+>
+> Este arquivo é o roadmap completo do projeto OrganizAI. Ele está sendo passado para você (Claude Code / Claude na IDE) para que implemente as fases pendentes uma a uma.
+>
+> **Como trabalhar com este arquivo:**
+>
+> - As fases marcadas com `[x]` já estão implementadas — não mexa nelas
+> - As fases marcadas com `[ ]` são o que você precisa implementar
+> - Cada item descreve exatamente quais arquivos criar, quais modificar, e qual lógica aplicar
+> - Implemente **um item por vez**, confirme que funciona, depois avance
+> - Sempre respeite os padrões visuais e de código descritos na seção "Convenções" no final deste arquivo
+> - Quando um item diz "INALTERADO", significa que o JSX/lógica original deve ser preservado sem alterações
+> - O projeto usa **pnpm** como gerenciador de pacotes — use `pnpm add` em vez de `npm install`
+>
+> **Stack atual do projeto:**
+> React 19 · TypeScript · Tailwind CSS v4 · Vite 8 · React Router DOM v7 · `@google/generative-ai`
+>
+> **Estrutura relevante:**
+>
+> ```
+> /
+> ├── api/                    ← Vercel Serverless Functions (criadas na Fase 5.5)
+> ├── src/
+> │   ├── components/         ← Componentes React reutilizáveis
+> │   ├── hooks/              ← Custom hooks
+> │   ├── pages/              ← Páginas (Result, History, Home, Simulation)
+> │   ├── services/           ← gemini.ts (integração com IA)
+> │   ├── types/index.ts      ← Interfaces TypeScript (SimulationDetails, DiagnosisResponse)
+> │   └── utils/              ← formatters.ts, prompt.ts
+> ├── .env.local              ← GEMINI_API_KEY (nunca commitar)
+> └── vercel.json             ← Configuração de rewrites
+> ```
 
 ---
 
 ## 🗺️ Mapa de Etapas do Projeto
-
-Utilize esta lista para acompanhar o progresso do desenvolvimento do projeto. Marque as caixas conforme for concluindo cada etapa.
 
 ---
 
@@ -59,146 +88,482 @@ Utilize esta lista para acompanhar o progresso do desenvolvimento do projeto. Ma
 
 ---
 
-### 🔁 Fase 5.5: Remover a API Key do Usuário — Gemini via Variável de Ambiente
+### 🔒 Fase 5.5: Backend Proxy — Gemini sem API Key do Usuário
 
-Esta fase elimina completamente a necessidade de o usuário configurar uma API Key do Google Gemini. A chave passa a ser uma variável de ambiente do projeto (`VITE_GEMINI_API_KEY`), configurada pelo desenvolvedor no `.env.local` durante o desenvolvimento e no painel do serviço de deploy (Vercel, Netlify, etc.) em produção. O usuário abre o app e o diagnóstico funciona imediatamente, sem nenhuma etapa de configuração.
+**Objetivo desta fase:** o usuário abre o site e usa direto, sem configurar nada. A chave do Gemini fica guardada no servidor (Vercel) e nunca é exposta no browser. Isso é feito criando dois endpoints serverless na pasta `api/` que funcionam como proxy entre o frontend e a API do Google Gemini.
 
-O Google Gemini oferece um tier gratuito generoso via Google AI Studio (`aistudio.google.com`), que é suficiente para uso educacional e projetos pessoais — sem necessidade de cartão de crédito.
+**Contexto importante:**
 
-> **Importante para o Claude da IDE:** esta fase não troca a biblioteca nem o modelo — `@google/generative-ai` e `gemini-2.5-flash` continuam sendo usados. A única mudança é de onde vem a chave: antes do usuário via localStorage, agora da variável de ambiente `import.meta.env.VITE_GEMINI_API_KEY`.
-
----
-
-- [x] **25. Mover a API Key do Gemini para Variável de Ambiente**
-
-  **Objetivo:** Fazer com que `src/services/gemini.ts` leia a chave diretamente de `import.meta.env.VITE_GEMINI_API_KEY` em vez de recebê-la como parâmetro vindo do `useApiKey` hook. Isso torna a chave invisível ao usuário final.
-
-  **Como funciona na prática:**
-  - Em desenvolvimento local: o desenvolvedor cria `.env.local` com `VITE_GEMINI_API_KEY=AIza...` (já estava em `.env.example`)
-  - Em produção (Vercel/Netlify/etc.): a mesma variável é configurada no painel de ambiente do serviço de deploy
-  - O Vite injeta `import.meta.env.VITE_GEMINI_API_KEY` no bundle em build time — a chave nunca aparece para o usuário final em runtime, apenas no bundle compilado (comportamento padrão e aceito para projetos frontend com tier gratuito)
-
-  **Arquivos a modificar:**
-  - `src/services/gemini.ts`:
-
-    Atualmente as funções `generateFinancialDiagnosis` e `sendChatMessage` recebem `apiKey: string` como último parâmetro e instanciam `new GoogleGenerativeAI(apiKey)` com esse valor.
-
-    A mudança é simples: criar uma constante no topo do arquivo que lê a env var, e usá-la internamente em vez do parâmetro:
-
-    ```ts
-    // Adicionar no topo do arquivo, após os imports:
-    const GEMINI_API_KEY =
-      (import.meta.env.VITE_GEMINI_API_KEY as string) ?? '';
-    ```
-
-    Em seguida, **remover o parâmetro `apiKey: string`** das assinaturas de ambas as funções exportadas e substituir `new GoogleGenerativeAI(apiKey)` por `new GoogleGenerativeAI(GEMINI_API_KEY)` nos dois lugares onde aparece.
-
-    As novas assinaturas ficam:
-
-    ```ts
-    export const generateFinancialDiagnosis = async (
-      simulationData: SimulationDetails,
-    ): Promise<DiagnosisResponse>
-
-    export const sendChatMessage = async (
-      history: { role: 'user' | 'model'; text: string }[],
-      newMessage: string,
-      simulation: SimulationDetails,
-      diagnosis: DiagnosisResponse,
-    ): Promise<string>
-    ```
-
-  - `src/pages/Result.tsx`:
-    - Remover os imports de `useApiKey` e `ApiKeySetup`
-    - Remover a desestruturação `const { apiKey, hasApiKey, saveApiKey } = useApiKey()`
-    - Remover a função `handleKeySave`
-    - Na função `fetchDiagnosis`, remover o parâmetro `key: string` e a passagem desse parâmetro para `generateFinancialDiagnosis`. A chamada fica: `const result = await generateFinancialDiagnosis(simData)`
-    - No `useEffect` que dispara o diagnóstico, substituir `if (simulation && hasApiKey && !diagnosis)` por `if (simulation && !diagnosis)` — o diagnóstico é gerado automaticamente assim que a simulação carrega, sem gate de chave
-    - Remover o bloco JSX inteiro que renderiza `<ApiKeySetup>` quando `!hasApiKey && !diagnosis` — esse estado não existe mais
-    - Remover o bloco JSX de erro que renderizava `<ApiKeySetup onSave={handleKeySave} />` dentro do estado de erro com API key já definida
-
-  - `src/components/AiChat.tsx`:
-    - Remover o import de `useApiKey` e `IconLock`
-    - Remover `const { apiKey, hasApiKey } = useApiKey()`
-    - Na função `send`, remover o parâmetro `apiKey` da chamada de `sendChatMessage`. A chamada fica: `const response = await sendChatMessage(messages, trimmed, simulation, diagnosis)`
-    - Remover completamente o bloco `if (!hasApiKey) { return <div>Chat indisponível...</div> }` — o chat sempre estará disponível
-    - Remover `IconLock` do JSX se não for mais usado em nenhum outro lugar do componente
-
-  - `src/hooks/useApiKey.ts` — **não deletar** (pode ser útil futuramente), mas adicionar comentário no topo:
-
-    ```ts
-    // Não utilizado desde a Fase 5.5.
-    // A API Key do Gemini agora é lida diretamente de import.meta.env.VITE_GEMINI_API_KEY
-    // em src/services/gemini.ts, sem necessidade de input do usuário.
-    ```
-
-  - `src/components/ApiKeySetup.tsx` — **não deletar**, apenas não é mais renderizado em nenhum lugar. Adicionar comentário no topo:
-
-    ```tsx
-    // Não utilizado desde a Fase 5.5.
-    // O usuário não precisa mais configurar a API Key manualmente.
-    ```
-
-  - `.env.example` — atualizar o comentário para deixar claro o novo fluxo:
-    ```
-    # Gemini API Key — obtenha gratuitamente em https://aistudio.google.com/app/apikey
-    # Desenvolvimento local: copie este arquivo para .env.local e preencha com sua chave
-    # Produção: configure VITE_GEMINI_API_KEY no painel de ambiente do seu serviço de deploy
-    # O usuário final não precisa configurar nada — a chave fica no servidor/build
-    VITE_GEMINI_API_KEY=
-    ```
+- O projeto já tem `@google/generative-ai` instalado — ele será usado dentro das functions (Node.js), não mais no browser
+- O `src/services/gemini.ts` atual chama o Gemini diretamente do browser recebendo `apiKey` como parâmetro — isso será substituído por chamadas `fetch` para os endpoints `/api/diagnose` e `/api/chat`
+- As funções exportadas de `gemini.ts` (`generateFinancialDiagnosis` e `sendChatMessage`) mantêm os mesmos nomes para minimizar mudanças no resto do código, mas perdem o parâmetro `apiKey`
+- Em dev local, usar `vercel dev` (não `vite dev`) para que as functions rodem junto com o frontend
 
 ---
 
-- [x] **26. Atualizar a Página Home para Refletir o App sem Barreiras**
+- [x] **25. Criar as Vercel Serverless Functions como Proxy do Gemini**
 
-  **Objetivo:** Atualizar os textos da hero section e do roadmap na `src/pages/Home.tsx` para comunicar que o app funciona sem configuração, e remover a menção de que a API Key é necessária.
+  **Dependência a instalar:** `pnpm add -D @vercel/node`
 
-  **Arquivos a modificar:**
-  - `src/pages/Home.tsx`:
-    - No array `ROADMAP_ITEMS`, atualizar a descrição do card de diagnóstico: substituir `'Integração com Google Gemini para gerar insights e plano de ação personalizados.'` por `'Integração com Google Gemini para gerar insights e plano de ação personalizados — sem configuração necessária.'`
-    - No subtítulo da hero section `<p className="text-sm text-slate-400...">`, se houver menção a "API Key" ou "configuração", remover ou suavizar o texto
+  **Arquivo a criar — `api/diagnose.ts`** (na raiz do projeto, não dentro de `src/`):
 
-  - `.env.example` — já atualizado no item 25
+  ````ts
+  import type { VercelRequest, VercelResponse } from '@vercel/node';
+  import { GoogleGenerativeAI } from '@google/generative-ai';
+
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
+
+  const sanitizeJsonResponse = (text: string): string => {
+    let cleaned = text.trim();
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/, '')
+        .replace(/\s*```$/, '');
+    }
+    return cleaned.trim();
+  };
+
+  export default async function handler(
+    req: VercelRequest,
+    res: VercelResponse,
+  ) {
+    if (req.method !== 'POST')
+      return res.status(405).json({ error: 'Method not allowed' });
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (!GEMINI_API_KEY)
+      return res.status(500).json({ error: 'Serviço de IA não configurado.' });
+    try {
+      const { prompt } = req.body as { prompt: string };
+      if (!prompt)
+        return res.status(400).json({ error: 'Campo "prompt" é obrigatório.' });
+      const ai = new GoogleGenerativeAI(GEMINI_API_KEY);
+      const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const result = await model.generateContent(prompt);
+      const parsed = JSON.parse(sanitizeJsonResponse(result.response.text()));
+      return res.status(200).json(parsed);
+    } catch (err) {
+      console.error('[/api/diagnose]', err);
+      return res
+        .status(500)
+        .json({ error: 'Erro ao gerar diagnóstico. Tente novamente.' });
+    }
+  }
+  ````
+
+  **Arquivo a criar — `api/chat.ts`** (na raiz do projeto):
+
+  ```ts
+  import type { VercelRequest, VercelResponse } from '@vercel/node';
+  import { GoogleGenerativeAI } from '@google/generative-ai';
+
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
+
+  export default async function handler(
+    req: VercelRequest,
+    res: VercelResponse,
+  ) {
+    if (req.method !== 'POST')
+      return res.status(405).json({ error: 'Method not allowed' });
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (!GEMINI_API_KEY)
+      return res.status(500).json({ error: 'Serviço de IA não configurado.' });
+    try {
+      const { history, newMessage, systemPrompt } = req.body as {
+        history: { role: 'user' | 'model'; text: string }[];
+        newMessage: string;
+        systemPrompt: string;
+      };
+      if (!newMessage || !systemPrompt)
+        return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
+      const ai = new GoogleGenerativeAI(GEMINI_API_KEY);
+      const model = ai.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        systemInstruction: systemPrompt,
+      });
+      const chat = model.startChat({
+        history: (history ?? []).map((m) => ({
+          role: m.role,
+          parts: [{ text: m.text }],
+        })),
+      });
+      const result = await chat.sendMessage(newMessage);
+      return res.status(200).json({ text: result.response.text() });
+    } catch (err) {
+      console.error('[/api/chat]', err);
+      return res
+        .status(500)
+        .json({ error: 'Erro ao processar mensagem. Tente novamente.' });
+    }
+  }
+  ```
+
+  **Arquivo a criar — `vercel.json`** (na raiz do projeto):
+
+  ```json
+  {
+    "rewrites": [{ "source": "/api/(.*)", "destination": "/api/$1" }]
+  }
+  ```
+
+---
+
+- [x] **26. Reescrever `src/services/gemini.ts` para Chamar o Proxy**
+
+  O arquivo deixa de importar ou instanciar `GoogleGenerativeAI` — isso agora é responsabilidade das functions. Ele passa a usar `fetch` para os endpoints `/api/diagnose` e `/api/chat`.
+
+  A constante `API_BASE` garante que em dev local (`vercel dev`) as chamadas vão para `http://localhost:3000`, e em produção vão para `/api/...` do mesmo domínio (sem CORS).
+
+  **Substituir `src/services/gemini.ts` inteiro por:**
+
+  ```ts
+  import type { SimulationDetails, DiagnosisResponse } from '../types';
+  import { buildFinancialPrompt } from '../utils/prompt';
+  import { formatCurrency } from '../utils/formatters';
+
+  export type { SimulationDetails, DiagnosisResponse };
+
+  const API_BASE = import.meta.env.DEV ? 'http://localhost:3000' : '';
+
+  export const generateFinancialDiagnosis = async (
+    simulationData: SimulationDetails,
+  ): Promise<DiagnosisResponse> => {
+    const response = await fetch(`${API_BASE}/api/diagnose`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: buildFinancialPrompt(simulationData) }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(
+        (err as { error?: string }).error ?? `Erro ${response.status}`,
+      );
+    }
+    const data = (await response.json()) as Partial<DiagnosisResponse>;
+    return {
+      diagnosticoGeral: data.diagnosticoGeral ?? '',
+      pontosFortes: data.pontosFortes ?? [],
+      oportunidadesMelhoria: data.oportunidadesMelhoria ?? [],
+      planoAcao: data.planoAcao ?? [],
+      saudeFinanceiraScore:
+        typeof data.saudeFinanceiraScore === 'number'
+          ? data.saudeFinanceiraScore
+          : 70,
+    };
+  };
+
+  const buildChatSystemPrompt = (
+    simulation: SimulationDetails,
+    diagnosis: DiagnosisResponse,
+  ): string => {
+    const { profile, finances } = simulation;
+    return `Você é o OrganizAI, assistente de educação financeira pessoal de ${profile.name}.
+  Renda mensal: ${formatCurrency(finances.income.total)} | Despesas: ${formatCurrency(finances.totalExpenses)} | Saldo: ${formatCurrency(finances.netBalance)}
+  Objetivo: ${profile.mainGoal} | Score: ${diagnosis.saudeFinanceiraScore}/100
+  Dívidas: ${formatCurrency(finances.savingsAndDebts.currentDebts)} | Reservas: ${formatCurrency(finances.savingsAndDebts.amountSaved)}
+  Diagnóstico: "${diagnosis.diagnosticoGeral.substring(0, 300)}..."
+  Responda de forma empática, didática, referenciando os dados reais. Máximo 3 parágrafos.`;
+  };
+
+  export const sendChatMessage = async (
+    history: { role: 'user' | 'model'; text: string }[],
+    newMessage: string,
+    simulation: SimulationDetails,
+    diagnosis: DiagnosisResponse,
+  ): Promise<string> => {
+    const response = await fetch(`${API_BASE}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        history,
+        newMessage,
+        systemPrompt: buildChatSystemPrompt(simulation, diagnosis),
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(
+        (err as { error?: string }).error ?? `Erro ${response.status}`,
+      );
+    }
+    const data = (await response.json()) as { text: string };
+    return data.text;
+  };
+  ```
+
+---
+
+- [x] **27. Atualizar `src/pages/Result.tsx` — Remover Gate de API Key**
+
+  Fazer apenas as seguintes mudanças cirúrgicas no `Result.tsx` existente (não reescrever o arquivo todo — preservar todo o JSX de cards financeiros, score, pontos fortes, etc.):
+
+  **Remover imports:**
+
+  ```tsx
+  // DELETAR estas duas linhas:
+  import { ApiKeySetup } from '../components/ApiKeySetup';
+  import { useApiKey } from '../hooks/useApiKey';
+  ```
+
+  **Remover dentro do componente:**
+
+  ```tsx
+  // DELETAR:
+  const { apiKey, hasApiKey, saveApiKey } = useApiKey();
+  // DELETAR a função handleKeySave inteira
+  ```
+
+  **Simplificar `fetchDiagnosis`** — remover o parâmetro `key: string` e atualizar a chamada e a mensagem de erro:
+
+  ```tsx
+  const fetchDiagnosis = async (simData: SimulationDetails) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await generateFinancialDiagnosis(simData); // sem "key"
+      setDiagnosis(result);
+      localStorage.setItem(`diagnosis_${simData.id}`, JSON.stringify(result));
+    } catch (err) {
+      console.error(err);
+      setError(
+        'Não foi possível gerar a análise. Tente novamente em instantes.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  ```
+
+  **Simplificar `useEffect`:**
+
+  ```tsx
+  // DE:
+  useEffect(() => {
+    if (simulation && hasApiKey && !diagnosis) {
+      fetchDiagnosis(simulation, apiKey);
+    }
+  }, [simulation, hasApiKey, diagnosis, apiKey]);
+
+  // PARA:
+  useEffect(() => {
+    if (simulation && !diagnosis) {
+      fetchDiagnosis(simulation);
+    }
+  }, [simulation, diagnosis]);
+  ```
+
+  **No JSX, remover o bloco `ApiKeySetup` inteiro:**
+
+  ```tsx
+  // DELETAR este bloco:
+  {
+    !hasApiKey && !diagnosis && (
+      <ApiKeySetup onSave={handleKeySave} error={error} />
+    );
+  }
+  ```
+
+  **Substituir o bloco de erro que continha `<ApiKeySetup onSave={handleKeySave} />`** por um botão simples de retry:
+
+  ```tsx
+  {error && hasApiKey && !loading && (
+    // TROCAR o conteúdo por:
+  )}
+  // →
+  {error && !loading && (
+    <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6">
+      <p className="mb-4 text-sm text-rose-400">{error}</p>
+      <Button variant="outline" size="sm" onClick={() => fetchDiagnosis(simulation)}>
+        Tentar novamente
+      </Button>
+    </div>
+  )}
+  ```
+
+---
+
+- [x] **28. Atualizar `src/components/AiChat.tsx` — Remover Gate de API Key**
+
+  Fazer apenas as seguintes mudanças no `AiChat.tsx` existente:
+
+  **Remover imports:**
+
+  ```tsx
+  // DELETAR:
+  import { useApiKey } from '../hooks/useApiKey';
+  import { IconLock } from './icons'; // remover só se não for usado em outro lugar do componente
+  ```
+
+  **Remover dentro do componente:**
+
+  ```tsx
+  // DELETAR:
+  const { apiKey, hasApiKey } = useApiKey();
+  ```
+
+  **Simplificar a chamada de `sendChatMessage`** — remover o argumento `apiKey`:
+
+  ```tsx
+  // DE:
+  const response = await sendChatMessage(
+    messages,
+    trimmed,
+    simulation,
+    diagnosis,
+    apiKey,
+  );
+  // PARA:
+  const response = await sendChatMessage(
+    messages,
+    trimmed,
+    simulation,
+    diagnosis,
+  );
+  ```
+
+  **Remover o bloco de "Chat indisponível" inteiro:**
+
+  ```tsx
+  // DELETAR este bloco completo:
+  if (!hasApiKey) {
+    return (
+      <div className="glass-panel rounded-3xl p-8 ...">
+        ...Chat indisponível...
+      </div>
+    );
+  }
+  ```
+
+---
+
+- [x] **29. Configurar `.env.local` e Atualizar `.env.example`**
+
+  **`.env.local`** (criar se não existir — nunca commitar):
+
+  ```
+  GEMINI_API_KEY=AIza...sua_chave_do_google_ai_studio
+  ```
+
+  **`.env.example`** (atualizar comentário):
+
+  ```
+  # Gemini API Key — obtenha gratuitamente em https://aistudio.google.com/app/apikey
+  # Em desenvolvimento: copie para .env.local e preencha
+  # Em produção (Vercel): configure GEMINI_API_KEY no painel de Environment Variables
+  # O usuário final do site não precisa configurar nada
+  GEMINI_API_KEY=
+  ```
+
+  **Para rodar localmente após esta fase:**
+
+  ```bash
+  pnpm add -g vercel   # instalar CLI da Vercel (uma vez)
+  vercel dev           # sobe frontend + functions juntos na porta 3000
+  ```
+
+  O `pnpm dev` (Vite puro) não executa as functions — usar sempre `vercel dev` para testar.
+
+  **Para publicar:**
+  1. `vercel` na raiz do projeto (ou conectar o repositório no painel vercel.com)
+  2. No painel da Vercel → Settings → Environment Variables → adicionar `GEMINI_API_KEY` com o valor da chave
+  3. Fazer redeploy — o site fica público, gratuito, sem pedir nada ao usuário
 
 ---
 
 ### ✅ Fase 6: Engajamento e Acompanhamento do Usuário
 
-Esta fase transforma o app de uma ferramenta de diagnóstico pontual em um sistema de acompanhamento financeiro contínuo. O usuário passa a ter razões para voltar ao app, acompanhar seu progresso e agir sobre as recomendações da IA.
-
-> **Pré-requisito:** a Fase 5.5 deve estar completa antes de iniciar esta fase. Todos os itens abaixo assumem que `src/services/gemini.ts` já não recebe `apiKey` como parâmetro, e que `Result.tsx` e `AiChat.tsx` já foram atualizados para não depender de `useApiKey`.
+> **Pré-requisito:** a Fase 5.5 deve estar completa e funcionando antes de iniciar esta fase. Todos os itens abaixo assumem que `src/services/gemini.ts` já não recebe `apiKey` como parâmetro, e que `Result.tsx` e `AiChat.tsx` já foram atualizados.
 
 ---
 
-- [x] **27. Checklist Interativa do Plano de Ação**
+- [x] **30. Checklist Interativa do Plano de Ação**
 
   **Objetivo:** Converter os itens do `planoAcao[]` retornados pelo Gemini em checkboxes interativos na página de Resultado, com progresso salvo no localStorage por simulação.
 
-  **Contexto do projeto:**
-  - O array `diagnosis.planoAcao` já existe com objetos `{ titulo: string, descricao: string }[]`
-  - O widget decorativo `ChecklistWidgetContent` na `src/pages/Home.tsx` já mostra o conceito visualmente na hero section — a implementação real é a concretização desse mockup
-  - O `localStorage` já é usado extensivamente no projeto com padrões como `diagnosis_{id}` e `simulation_{id}`
+  **Contexto:**
+  - `diagnosis.planoAcao` é `{ titulo: string, descricao: string }[]`
+  - O widget decorativo `ChecklistWidgetContent` na `Home.tsx` já mostra visualmente o conceito — a implementação real é a concretização desse mockup
+  - Chave de localStorage: `checklist_{simulationId}` → `{ [stepIndex: number]: boolean }`
 
-  **Arquivos a criar:**
-  - `src/hooks/useChecklist.ts` — hook que carrega/salva o estado `{ [stepIndex]: boolean }` no localStorage com a chave `checklist_{simulationId}`. Exportar também uma função pura `getChecklistProgress(id: string, total: number): { completedCount: number, progressPercent: number }` para ser usada sem hook (no Histórico). O hook deve expor: `checked`, `toggle(index: number)`, `completedCount`, `progressPercent`, `isAllDone`
+  **Arquivo a criar — `src/hooks/useChecklist.ts`:**
 
-  - `src/components/ActionPlanChecklist.tsx` — componente que recebe `simulationId: string` e `steps: { titulo: string, descricao: string }[]`. Cada item é um `<button>` que ao clicar chama `toggle(idx)`. Exibe:
-    - Barra de progresso animada no topo com `transition-all duration-500`, mudando de cor: `bg-violet-500` (0–29%) → `bg-amber-500` (30–59%) → `bg-lime-500` (60–99%) → `bg-accent-lime` (100%)
-    - Contador "X/N concluídas" no canto superior direito
-    - Cada item não concluído: número do step em círculo + título em `text-white` + descrição em `text-slate-400`
-    - Cada item concluído: ícone de check verde no círculo + título em `text-accent-lime line-through` + descrição em `text-slate-500 line-through`
-    - Mensagem motivacional no rodapé quando `isAllDone === true`: `"🎉 Parabéns! Você concluiu todas as ações do seu plano financeiro."`
-    - Usar classes Tailwind já presentes no projeto: `glass-panel`, `rounded-3xl`, `border border-white/5`, `bg-white/[0.02]`, `animate-fadeIn`
+  ```ts
+  import { useState, useCallback } from 'react';
 
-  - `src/components/ChecklistProgressBadge.tsx` — componente leve para os cards do Histórico. Chama `getChecklistProgress()` diretamente (sem hook). Exibe mini barra de progresso e texto:
-    - `completedCount === 0`: "Plano de ação não iniciado" em `text-slate-500`
-    - `0 < completedCount < total`: "X/N ações concluídas" em `text-slate-400` + barra colorida
-    - `completedCount === total`: "✓ Plano concluído" em `text-accent-lime` + barra cheia
+  export type ChecklistState = Record<number, boolean>;
 
-  **Arquivos a modificar:**
-  - `src/pages/Result.tsx` — importar `ActionPlanChecklist` e substituir o bloco JSX do "Action Plan" (o `<div>` com a classe `relative space-y-6 before:absolute before:inset-y-1 before:left-3.5 before:w-0.5 before:bg-violet-600/30`) pelo novo componente:
+  function load(id: string): ChecklistState {
+    try {
+      return JSON.parse(localStorage.getItem(`checklist_${id}`) ?? '{}');
+    } catch {
+      return {};
+    }
+  }
 
+  function save(id: string, state: ChecklistState) {
+    try {
+      localStorage.setItem(`checklist_${id}`, JSON.stringify(state));
+    } catch {}
+  }
+
+  export function useChecklist(simulationId: string, totalSteps: number) {
+    const [checked, setChecked] = useState<ChecklistState>(() =>
+      load(simulationId),
+    );
+    const toggle = useCallback(
+      (index: number) => {
+        setChecked((prev) => {
+          const next = { ...prev, [index]: !prev[index] };
+          save(simulationId, next);
+          return next;
+        });
+      },
+      [simulationId],
+    );
+    const completedCount = Object.values(checked).filter(Boolean).length;
+    const progressPercent =
+      totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0;
+    const isAllDone = completedCount === totalSteps && totalSteps > 0;
+    return { checked, toggle, completedCount, progressPercent, isAllDone };
+  }
+
+  export function getChecklistProgress(
+    simulationId: string,
+    totalSteps: number,
+  ) {
+    const state = load(simulationId);
+    const completedCount = Object.values(state).filter(Boolean).length;
+    return {
+      completedCount,
+      progressPercent:
+        totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0,
+    };
+  }
+  ```
+
+  **Arquivo a criar — `src/components/ActionPlanChecklist.tsx`:**
+  - Recebe props: `simulationId: string` e `steps: { titulo: string, descricao: string }[]`
+  - Usa `useChecklist(simulationId, steps.length)`
+  - Barra de progresso no topo com `transition-all duration-500` e cores: `bg-violet-500` (0–29%) → `bg-amber-500` (30–59%) → `bg-lime-500` (60–99%) → `bg-accent-lime` (100%)
+  - Cada item é um `<button>` com `onClick={() => toggle(idx)}`
+  - Item não concluído: número em círculo `border-2 border-white/20` + título `text-white` + descrição `text-slate-400`
+  - Item concluído: ícone de check em círculo `bg-accent-lime` + título `text-accent-lime line-through` + descrição `text-slate-500 line-through`
+  - Quando `isAllDone`: exibir mensagem `"🎉 Parabéns! Você concluiu todas as ações do seu plano financeiro."` em card `border-accent-lime/20 bg-accent-lime/5`
+  - Container: `className="rounded-3xl border border-white/5 bg-white/[0.01] p-6 shadow-2xl"`
+
+  **Arquivo a criar — `src/components/ChecklistProgressBadge.tsx`:**
+  - Recebe props: `simulationId: string` e `totalSteps: number`
+  - Chama `getChecklistProgress()` diretamente (sem hook de estado)
+  - Se `totalSteps === 0`: retornar `null`
+  - Se `completedCount === 0`: texto "Plano de ação não iniciado" em `text-slate-500`
+  - Se parcial: texto "X/N ações concluídas" em `text-slate-400` + mini barra colorida
+  - Se 100%: texto "✓ Plano concluído" em `text-accent-lime` + barra cheia
+
+  **Modificar `src/pages/Result.tsx`:**
+  - Importar `ActionPlanChecklist`
+  - Substituir o bloco `{diagnosis.planoAcao.length > 0 && (<div className="rounded-3xl ..."><h4>Seu Plano de Ação...</h4><div className="relative space-y-6 before:absolute...">...</div></div>)}` por:
     ```tsx
     {
       diagnosis.planoAcao.length > 0 && (
@@ -210,174 +575,151 @@ Esta fase transforma o app de uma ferramenta de diagnóstico pontual em um siste
     }
     ```
 
-  - `src/pages/History.tsx` — adicionar helper `loadCachedDiagnosis(id: string)` junto ao `loadCachedScore` existente (lê `diagnosis_{id}` do localStorage e retorna o objeto parseado ou null). Dentro do `.map()` dos cards de simulação, após o `ScoreBadge`, adicionar:
+  **Modificar `src/pages/History.tsx`:**
+  - Adicionar helper junto ao `loadCachedScore` existente:
+    ```ts
+    function loadCachedDiagnosis(id: string) {
+      try {
+        const r = localStorage.getItem(`diagnosis_${id}`);
+        return r ? JSON.parse(r) : null;
+      } catch {
+        return null;
+      }
+    }
+    ```
+  - Importar `ChecklistProgressBadge`
+  - Dentro do `.map()` dos cards, após o `ScoreBadge`, adicionar:
     ```tsx
     {
       (() => {
-        const cached = loadCachedDiagnosis(sim.id);
-        const totalSteps = cached?.planoAcao?.length ?? 0;
-        return totalSteps > 0 ? (
+        const total = loadCachedDiagnosis(sim.id)?.planoAcao?.length ?? 0;
+        return total > 0 ? (
           <div className="mt-3">
-            <ChecklistProgressBadge
-              simulationId={sim.id}
-              totalSteps={totalSteps}
-            />
+            <ChecklistProgressBadge simulationId={sim.id} totalSteps={total} />
           </div>
         ) : null;
       })();
     }
     ```
-    Importar `ChecklistProgressBadge` no topo do arquivo.
 
 ---
 
-- [x] **28. Gráfico de Evolução do Score de Saúde Financeira**
+- [x] **31. Gráfico de Evolução do Score de Saúde Financeira**
 
-  **Objetivo:** Criar uma seção no `src/pages/History.tsx` que exibe um gráfico de linha mostrando a evolução do `saudeFinanceiraScore` ao longo das simulações do usuário, ordenado cronologicamente.
+  **Objetivo:** Seção no Histórico mostrando a evolução do `saudeFinanceiraScore` ao longo das simulações.
 
-  **Contexto do projeto:**
-  - Cada simulação tem `sim.date` (string `dd/mm/yyyy`)
-  - O score está em `localStorage` com chave `diagnosis_{id}` → campo `saudeFinanceiraScore`
-  - A função `loadCachedScore(id)` já existe em `History.tsx` e retorna `number | null`
+  **Dependência:** `pnpm add recharts`
 
-  **Dependência a instalar:** `npm install recharts`
+  **Contexto:**
+  - `loadCachedScore(id)` já existe em `History.tsx` e retorna `number | null`
+  - `loadSimulations()` retorna em ordem decrescente — inverter para o gráfico
+  - `sim.date` é string `dd/mm/yyyy`
 
-  **Arquivos a criar:**
-  - `src/components/ScoreEvolutionChart.tsx` — componente que recebe `simulations: StoredSimulation[]` (ordem cronológica: mais antiga primeiro). Internamente constrói:
-
-    ```ts
-    const data = simulations
-      .map((s) => ({
-        date: s.date,
-        score: loadCachedScore(s.id),
-        label: s.profile.name,
-      }))
-      .filter((d) => d.score !== null);
-    ```
-
-    Se `data.length < 2`, renderizar estado vazio: card `glass-panel rounded-3xl p-6` com texto "Faça pelo menos 2 simulações com diagnóstico para ver a evolução do seu score".
-
-    Quando `data.length >= 2`, usar `<ResponsiveContainer width="100%" height={220}>` com `<LineChart>` do Recharts contendo:
+  **Arquivo a criar — `src/components/ScoreEvolutionChart.tsx`:**
+  - Recebe `simulations: StoredSimulation[]` (ordem cronológica: mais antiga primeiro)
+  - Constrói `data = simulations.map(s => ({ date: s.date, score: loadCachedScore(s.id) })).filter(d => d.score !== null)`
+  - Se `data.length < 2`: card com texto "Faça pelo menos 2 simulações com diagnóstico para ver a evolução do seu score"
+  - Se `data.length >= 2`: `<ResponsiveContainer width="100%" height={220}>` com `<LineChart>`:
     - `<CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />`
     - `<XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 11 }} />`
     - `<YAxis domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 11 }} />`
     - `<Tooltip contentStyle={{ background: '#030014', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff' }} />`
     - `<Line type="monotone" dataKey="score" stroke="#c5ff22" strokeWidth={2} dot={{ fill: '#c5ff22', r: 4 }} activeDot={{ r: 6 }} />`
+  - Container: `className="glass-panel rounded-3xl p-6 shadow-2xl"` com título e subtítulo
 
-    Envolver em container com `className="glass-panel rounded-3xl p-6 shadow-2xl"`, título "Evolução da Saúde Financeira" e subtítulo "Score ao longo das suas simulações".
-
-  **Arquivos a modificar:**
-  - `src/pages/History.tsx` — importar `ScoreEvolutionChart` e adicionar logo abaixo do header da página (antes da lista de cards), somente se `simulations.length >= 1`:
+  **Modificar `src/pages/History.tsx`:**
+  - Importar `ScoreEvolutionChart`
+  - Adicionar logo abaixo do header (antes da lista de cards), quando `simulations.length >= 1`:
     ```tsx
-    {
-      simulations.length >= 1 && (
-        <div className="mb-8">
-          <ScoreEvolutionChart simulations={[...simulations].reverse()} />
-        </div>
-      );
-    }
-    ```
-    O `.reverse()` é necessário porque `loadSimulations()` retorna em ordem decrescente, mas o gráfico precisa da ordem cronológica (mais antiga → mais recente, da esquerda para direita).
-
----
-
-- [x] **29. Renderização de Markdown no Diagnóstico Geral**
-
-  **Objetivo:** O campo `diagnosticoGeral` retornado pelo Gemini contém formatação Markdown (quebras de linha `\n`, listas com `-`, negrito com `**texto**`). Atualmente é renderizado como `<p>` simples, perdendo toda a formatação.
-
-  **Contexto do projeto:**
-  - O prompt em `src/utils/prompt.ts` instrui o Gemini a retornar `diagnosticoGeral` "em formato markdown amigável com quebras de linha \n"
-  - Em `src/pages/Result.tsx`, o campo é exibido em um `<p className="... whitespace-pre-line">`
-
-  **Dependência a instalar:** `npm install react-markdown`
-
-  **Arquivos a modificar:**
-  - `src/pages/Result.tsx` — adicionar `import ReactMarkdown from 'react-markdown'` no topo. Localizar o `<p>` que renderiza `{diagnosis.diagnosticoGeral}` e substituir por:
-    ```tsx
-    <div className="space-y-2">
-      <ReactMarkdown
-        components={{
-          p: ({ children }) => (
-            <p className="mb-3 text-sm leading-relaxed text-slate-300 last:mb-0">
-              {children}
-            </p>
-          ),
-          strong: ({ children }) => (
-            <strong className="font-bold text-white">{children}</strong>
-          ),
-          ul: ({ children }) => (
-            <ul className="mt-2 list-inside list-disc space-y-1 text-slate-400">
-              {children}
-            </ul>
-          ),
-          li: ({ children }) => (
-            <li className="text-sm leading-relaxed">{children}</li>
-          ),
-        }}
-      >
-        {diagnosis.diagnosticoGeral}
-      </ReactMarkdown>
+    <div className="mb-8">
+      <ScoreEvolutionChart simulations={[...simulations].reverse()} />
     </div>
     ```
 
 ---
 
-- [x] **30. Comparação Lado a Lado de Duas Simulações**
+- [x] **32. Renderização de Markdown no Diagnóstico Geral**
 
-  **Objetivo:** Criar uma página `/comparar` onde o usuário seleciona duas simulações do histórico e vê um diff visual com renda, despesas, saldo e score lado a lado.
+  **Objetivo:** Renderizar corretamente o Markdown que o Gemini retorna em `diagnosticoGeral` (negrito, listas, quebras de linha).
 
-  **Contexto do projeto:**
-  - As simulações ficam em `localStorage` com chave `simulation_{id}` (objeto `SimulationDetails` completo)
-  - A tipagem `SimulationDetails` está em `src/types/index.ts`
-  - O score vem de `diagnosis_{id}` → `saudeFinanceiraScore`
-  - O roteamento usa React Router DOM — ver `src/App.tsx` para o padrão de `<Route>`
-  - Design padrão: `glass-panel rounded-3xl border border-white/5 bg-white/[0.01] p-6 shadow-2xl`
+  **Dependência:** `pnpm add react-markdown`
 
-  **Arquivos a criar:**
-  - `src/pages/Compare.tsx` — página com estrutura:
-    1. Header: título "Comparar Simulações" + subtítulo
-    2. Dois `<select>` estilizados com `className="glass-input"` para escolher simulação A e simulação B. Populados com `JSON.parse(localStorage.getItem('simulations') || '[]')`, mostrando `${sim.profile.name} — ${sim.date}` como label. Ler query string `?a={id}` com `useSearchParams()` para pré-selecionar a primeira simulação
-    3. Quando ambas selecionadas, exibir dois cards lado a lado (`grid grid-cols-2 gap-4`) com: nome + data, `ScoreBadge` com o score do diagnóstico (lido via `loadCachedScore`)
-    4. Tabela de comparação com as linhas: Renda Total, Despesas Fixas, Despesas Variáveis, Saldo Líquido, Dívidas, Reservas. Cada célula usa `formatCurrency`. Para cada linha, calcular qual valor é "melhor": para Renda, Saldo e Reservas → maior é melhor; para Despesas e Dívidas → menor é melhor. Destacar o valor vencedor em `text-accent-lime font-bold` e o perdedor em `text-rose-400`
-
-  **Arquivos a modificar:**
-  - `src/App.tsx` — adicionar:
-
+  **Modificar `src/pages/Result.tsx`:**
+  - Adicionar `import ReactMarkdown from 'react-markdown'`
+  - Localizar o `<p className="... whitespace-pre-line">{diagnosis.diagnosticoGeral}</p>` e substituir por:
     ```tsx
-    import { Compare } from './pages/Compare';
-    // dentro de <Routes>:
-    <Route path="/comparar" element={<Compare />} />;
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => (
+          <p className="mb-3 text-sm leading-relaxed text-slate-300 last:mb-0">
+            {children}
+          </p>
+        ),
+        strong: ({ children }) => (
+          <strong className="font-bold text-white">{children}</strong>
+        ),
+        ul: ({ children }) => (
+          <ul className="mt-2 list-inside list-disc space-y-1 text-slate-400">
+            {children}
+          </ul>
+        ),
+        li: ({ children }) => (
+          <li className="text-sm leading-relaxed">{children}</li>
+        ),
+      }}
+    >
+      {diagnosis.diagnosticoGeral}
+    </ReactMarkdown>
     ```
-
-  - `src/components/Header.tsx` — no array `NAV_LINKS`, adicionar `{ to: '/comparar', label: 'Comparar', exact: false }`. Para não poluir o nav de quem não tem simulações, inicializar com `const [hasEnough] = useState(() => JSON.parse(localStorage.getItem('simulations') || '[]').length >= 2)` e só incluir o link se `hasEnough === true`
-
-  - `src/pages/History.tsx` — nos cards de simulação, adicionar um botão `<Button variant="ghost" size="sm">` com texto "Comparar" que chama `navigate(\`/comparar?a=${sim.id}\`)`usando`useNavigate`
 
 ---
 
-- [x] **31. Editar Simulação Existente**
+- [x] **33. Comparação Lado a Lado de Duas Simulações**
 
-  **Objetivo:** Permitir que o usuário reabra uma simulação salva, edite os valores e re-submeta para gerar um novo diagnóstico com o Gemini, sem precisar preencher tudo do zero.
+  **Objetivo:** Página `/comparar` onde o usuário seleciona duas simulações e vê um diff visual.
 
-  **Contexto do projeto:**
-  - O formulário usa `useForm` de `src/hooks/useForm.ts` com `initialData` zerado
-  - Ao editar, deve criar um novo `simulationId` para preservar o histórico — nunca sobrescrever
-  - Após a Fase 5.5, o Gemini é chamado automaticamente ao carregar a página de resultado, sem gate de API Key
+  **Arquivo a criar — `src/pages/Compare.tsx`:**
+  - Ler query string `?a={id}` com `useSearchParams()` para pré-selecionar simulação A
+  - Dois `<select className="glass-input">` populados com `JSON.parse(localStorage.getItem('simulations') || '[]')`, label: `"${sim.profile.name} — ${sim.date}"`
+  - Ao selecionar ambas, exibir `grid grid-cols-2 gap-4` com card de cada simulação: nome, data, `ScoreBadge`
+  - Tabela de comparação com linhas: Renda Total, Despesas Fixas, Despesas Variáveis, Saldo Líquido, Dívidas, Reservas
+  - Lógica de destaque: para Renda/Saldo/Reservas → maior é melhor (`text-accent-lime font-bold`); para Despesas/Dívidas → menor é melhor; perdedor em `text-rose-400`
+  - Usar `formatCurrency` de `../utils/formatters`
 
-  **Arquivos a modificar:**
-  - `src/hooks/useForm.ts` — adicionar parâmetro opcional `preloadData?: Partial<SimulationData>` na assinatura de `useForm`. Inicializar o estado com `{ ...initialData, ...preloadData }`
+  **Modificar `src/App.tsx`:**
 
-  - `src/pages/Simulation.tsx` — adicionar no topo do componente:
+  ```tsx
+  import { Compare } from './pages/Compare';
+  // em <Routes>:
+  <Route path="/comparar" element={<Compare />} />;
+  ```
 
+  **Modificar `src/components/Header.tsx`:**
+  - Adicionar no array `NAV_LINKS`, condicionalmente:
     ```tsx
-    const [searchParams] = useSearchParams();
-    const editId = searchParams.get('edit');
+    const [hasEnough] = useState(
+      () => JSON.parse(localStorage.getItem('simulations') || '[]').length >= 2,
+    );
+    // incluir { to: '/comparar', label: 'Comparar', exact: false } apenas se hasEnough
     ```
 
-    Se `editId` existir, carregar `localStorage.getItem(\`simulation\_${editId}\`)`e converter os campos numéricos para formato de moeda com`formatCurrency()`(ex:`finances.income.salary`→`formatCurrency(String(finances.income.salary))`). Passar o objeto convertido para `useForm({ preloadData: convertedData })`.
+  **Modificar `src/pages/History.tsx`:**
+  - Adicionar botão "Comparar" em cada card: `navigate(\`/comparar?a=${sim.id}\`)`
 
-    Exibir banner no topo do formulário quando `editId` não é null:
+---
 
+- [x] **34. Editar Simulação Existente**
+
+  **Objetivo:** Reabrir uma simulação salva, editar os valores e gerar novo diagnóstico sem preencher tudo do zero.
+
+  **Modificar `src/hooks/useForm.ts`:**
+  - Adicionar parâmetro opcional `preloadData?: Partial<SimulationData>` em `useForm`
+  - Inicializar estado com `{ ...initialData, ...preloadData }`
+
+  **Modificar `src/pages/Simulation.tsx`:**
+  - Adicionar `const [searchParams] = useSearchParams(); const editId = searchParams.get('edit');`
+  - Se `editId` existir: carregar `simulation_{editId}` do localStorage, converter campos numéricos para formato de moeda com `formatCurrency(String(valor))`, passar como `preloadData` para `useForm`
+  - Exibir banner quando `editId` não for null:
     ```tsx
     <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-400">
       ✏️ Editando simulação de {originalDate} — um novo registro será criado ao
@@ -385,296 +727,287 @@ Esta fase transforma o app de uma ferramenta de diagnóstico pontual em um siste
     </div>
     ```
 
-  - `src/pages/History.tsx` — adicionar botão "Editar" em cada card:
-    ```tsx
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => navigate(`/simulacao?edit=${sim.id}`)}
-    >
-      Editar
-    </Button>
-    ```
+  **Modificar `src/pages/History.tsx`:**
+  - Botão "Editar" em cada card: `navigate(\`/simulacao?edit=${sim.id}\`)`
 
 ---
 
 ### 🚀 Fase 7: Produto, Distribuição e Experiência Avançada
 
-Esta fase eleva o OrganizAI de projeto educacional a produto com experiência próxima de um app profissional: instalável, com dicas geradas automaticamente pelo Gemini e exportação de relatórios em PDF.
-
-> **Pré-requisito:** as Fases 5.5 e 6 devem estar completas. Todos os serviços de IA nesta fase usam o `src/services/gemini.ts` já atualizado, que lê a chave da variável de ambiente automaticamente.
+> **Pré-requisito:** Fases 5.5 e 6 completas. Todos os serviços de IA usam o `gemini.ts` já atualizado — sem `apiKey` como parâmetro em nenhuma função.
 
 ---
 
-- [x] **32. Dicas Financeiras Diárias com Gemini**
+- [x] **35. Dicas Financeiras Diárias com Gemini**
 
-  **Objetivo:** Adicionar uma seção na `src/pages/Home.tsx` com uma dica financeira gerada pelo Gemini, contextualizada ao perfil da última simulação do usuário. A dica é gerada automaticamente uma vez por dia e cacheada no localStorage. O usuário não precisa fazer nada — ela aparece na Home ao retornar ao app.
+  **Objetivo:** Card na Home com dica financeira gerada automaticamente pelo Gemini, baseada no perfil da última simulação. Cache de 1 dia no localStorage.
 
-  **Contexto do projeto:**
-  - A última simulação pode ser obtida com `JSON.parse(localStorage.getItem('simulations') || '[]').at(-1)` para o ID mais recente, depois `localStorage.getItem(\`simulation\_${id}\`)` para os dados completos
-  - O `GEMINI_API_KEY` já está disponível em `import.meta.env.VITE_GEMINI_API_KEY` desde a Fase 5.5 — não receber como parâmetro
+  **Arquivo a criar — `src/services/dailyTip.ts`:**
 
-  **Arquivos a criar:**
-  - `src/services/dailyTip.ts` — função `getDailyTip(profile: { name: string, mainGoal: string }): Promise<string>`:
-    1. Checar cache: `const cache = JSON.parse(localStorage.getItem('daily_tip') || 'null')`. Se `cache?.date === new Date().toLocaleDateString('pt-BR')`, retornar `cache.tip` sem chamar a API
-    2. Instanciar `new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY)` e chamar `model.generateContent(prompt)` com o modelo `gemini-2.5-flash`. Prompt:
-       ```
-       Você é o OrganizAI. Gere UMA dica financeira prática e motivacional de no máximo 2 frases curtas para ${profile.name}, que tem como objetivo: "${profile.mainGoal}". Seja direto, encorajador e específico para esse objetivo. Retorne APENAS a dica, sem saudações, sem prefixos como "Dica:" e sem aspas.
-       ```
-    3. Salvar no localStorage: `localStorage.setItem('daily_tip', JSON.stringify({ date: new Date().toLocaleDateString('pt-BR'), tip: responseText }))`
-    4. Retornar `responseText`
+  ```ts
+  const API_BASE = import.meta.env.DEV ? 'http://localhost:3000' : '';
 
-  - `src/components/DailyTip.tsx` — componente sem props. No `useEffect`, verificar se existe alguma simulação no localStorage; se sim, carregar o perfil da última e chamar `getDailyTip()`. Estrutura visual:
-    - Container: `glass-panel rounded-3xl p-5 border border-white/5`
-    - Cabeçalho: ícone de lâmpada (do `icons.tsx` se disponível, ou SVG inline) + texto "Dica do dia" em `text-xs font-bold tracking-wider text-slate-400 uppercase`
-    - Corpo: a dica em `text-sm text-slate-300 leading-relaxed mt-2`
-    - Botão: `"↻ Nova dica"` em `text-[10px] text-slate-500 hover:text-slate-300 cursor-pointer` que limpa o cache com `localStorage.removeItem('daily_tip')` e força nova chamada à API
-    - Loading: dois blocos `<div className="h-3 rounded bg-white/5 animate-pulse">` de larguras 100% e 75%
-    - Se não houver simulações salvas, retornar `null` sem renderizar nada
+  export async function getDailyTip(profile: {
+    name: string;
+    mainGoal: string;
+  }): Promise<string> {
+    const today = new Date().toLocaleDateString('pt-BR');
+    try {
+      const cache = JSON.parse(localStorage.getItem('daily_tip') ?? 'null');
+      if (cache?.date === today) return cache.tip as string;
+    } catch {}
 
-  **Arquivos a modificar:**
-  - `src/pages/Home.tsx` — importar `DailyTip` e adicionar entre a hero section e o bloco de tech stack:
-    ```tsx
-    {
-      localStorage.getItem('simulations') && (
-        <div className="mt-12">
-          <DailyTip />
-        </div>
-      );
-    }
-    ```
-
----
-
-- [x] **33. Exportar Diagnóstico como PDF**
-
-  **Objetivo:** Adicionar um botão "Exportar PDF" na página de Resultado que gera um PDF do diagnóstico completo formatado para impressão ou compartilhamento. Não requer nenhuma chamada adicional à API do Gemini — usa apenas os dados já em memória.
-
-  **Contexto do projeto:**
-  - Os dados já estão todos disponíveis: `simulation: SimulationDetails` e `diagnosis: DiagnosisResponse`
-  - A identidade visual usa `#030014` como background e `#c5ff22` como accent
-
-  **Dependência a instalar:** `npm install jspdf`
-
-  **Arquivos a criar:**
-  - `src/utils/exportPdf.ts` — função `exportDiagnosisPdf(simulation: SimulationDetails, diagnosis: DiagnosisResponse): Promise<void>` usando `jspdf` programaticamente (não via screenshot, para garantir texto selecionável e qualidade de impressão).
-
-    Estrutura do PDF:
-    1. Cabeçalho: "OrganizAI." em bold grande + "Relatório de Diagnóstico Financeiro" + data de geração
-    2. Linha separadora horizontal `doc.line()`
-    3. Seção "Perfil": nome, idade, ocupação, objetivo principal — usar `doc.setFont` para alternar bold/normal
-    4. Score: "Saúde Financeira: XX/100" com barra visual desenhada com dois `doc.rect()` sobrepostos (fundo cinza + preenchimento colorido proporcional ao score)
-    5. Seção "Diagnóstico Geral": `doc.splitTextToSize(diagnosis.diagnosticoGeral, 170)` para quebra automática de linha
-    6. Seção "Pontos Fortes": lista com "✓ " prefixando cada item
-    7. Seção "Oportunidades de Melhoria": lista com "→ " prefixando cada item
-    8. Seção "Plano de Ação": lista numerada com título em bold + descrição em normal para cada step
-    9. Rodapé: "Gerado por OrganizAI" + data
-
-    Cores para impressão (evitar o neon `#c5ff22` — não imprime bem em papel):
-    - Texto principal: `[30, 30, 46]` (RGB de `#1e1e2e`)
-    - Títulos de seção: `[79, 70, 229]` (RGB de `#4f46e5` — indigo legível em papel)
-    - Texto secundário/descrições: `[71, 85, 105]` (RGB de `#475569` — slate-600)
-
-    Ao final: `doc.save(\`organizai-${simulation.profile.name.replace(/\s+/g, '-')}-${simulation.date.replace(/\//g, '-')}.pdf\`)`
-
-  **Arquivos a modificar:**
-  - `src/pages/Result.tsx` — no bloco de footer actions (div com `flex flex-col justify-end gap-4 border-t border-white/5 pt-6`), adicionar antes dos botões existentes:
-    ```tsx
-    {
-      diagnosis && !loading && (
-        <Button
-          variant="outline"
-          isLoading={isExporting}
-          onClick={async () => {
-            setIsExporting(true);
-            await exportDiagnosisPdf(simulation, diagnosis);
-            setIsExporting(false);
-          }}
-          className="gap-2"
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-            />
-          </svg>
-          Exportar PDF
-        </Button>
-      );
-    }
-    ```
-    Adicionar `const [isExporting, setIsExporting] = useState(false)` e o import `import { exportDiagnosisPdf } from '../utils/exportPdf'`
-
----
-
-- [x] **34. PWA — Instalação como App**
-
-  **Objetivo:** Tornar o OrganizAI instalável como Progressive Web App em dispositivos móveis e desktop, com ícone na tela inicial e suporte a uso offline básico (assets estáticos cacheados).
-
-  **Contexto do projeto:**
-  - Bundler: Vite
-  - Cores: `#030014` (background), `#c5ff22` (accent-lime)
-  - Não há `manifest.json` nem service worker atualmente
-
-  **Dependência a instalar:** `npm install -D vite-plugin-pwa`
-
-  **Arquivos a criar:**
-  - `public/manifest.json`:
-
-    ```json
-    {
-      "name": "OrganizAI",
-      "short_name": "OrganizAI",
-      "description": "Educação financeira com IA Generativa",
-      "start_url": "/",
-      "display": "standalone",
-      "background_color": "#030014",
-      "theme_color": "#c5ff22",
-      "icons": [
-        { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-        {
-          "src": "/icon-512.png",
-          "sizes": "512x512",
-          "type": "image/png",
-          "purpose": "any maskable"
-        }
-      ]
-    }
-    ```
-
-  - `public/icon-192.png` e `public/icon-512.png` — ícones do app. Podem ser gerados em https://favicon.io com as letras "OA" na cor `#c5ff22` sobre fundo `#030014`
-
-  **Arquivos a modificar:**
-  - `vite.config.ts` — adicionar o plugin:
-
-    ```ts
-    import { VitePWA } from 'vite-plugin-pwa';
-
-    // dentro de plugins: []:
-    VitePWA({
-      registerType: 'autoUpdate',
-      manifest: false, // usa o manifest.json do diretório public/
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-      },
+    const prompt = `Você é o OrganizAI. Gere UMA dica financeira prática e motivacional de no máximo 2 frases para ${profile.name}, objetivo: "${profile.mainGoal}". Retorne APENAS a dica, sem prefixos, sem aspas.`;
+    const response = await fetch(`${API_BASE}/api/diagnose`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, raw: true }), // "raw: true" sinaliza que não é JSON estruturado
     });
+    // Nota: a function /api/diagnose precisará tratar "raw: true" retornando o texto puro em vez de JSON.parse
+    // Ver ajuste necessário na function abaixo.
+    const data = (await response.json()) as { text?: string };
+    const tip = data.text ?? '';
+    localStorage.setItem('daily_tip', JSON.stringify({ date: today, tip }));
+    return tip;
+  }
+  ```
+
+  **Ajuste em `api/diagnose.ts`** para suportar resposta em texto puro (quando `raw: true`):
+
+  ```ts
+  // No handler, após gerar o responseText:
+  if (req.body.raw) {
+    return res.status(200).json({ text: result.response.text() });
+  }
+  // caso contrário, continua o fluxo de JSON.parse existente
+  ```
+
+  **Arquivo a criar — `src/components/DailyTip.tsx`:**
+  - Sem props — carrega internamente o perfil da última simulação
+  - `useEffect`: verifica `localStorage.getItem('simulations')`, carrega última simulação, chama `getDailyTip()`
+  - Se não houver simulações: `return null`
+  - Loading: dois divs `h-3 rounded bg-white/5 animate-pulse`
+  - Container: `glass-panel rounded-3xl p-5 border border-white/5` com ícone de lâmpada, título "Dica do dia", dica em `text-sm text-slate-300`, botão "↻ Nova dica" que limpa `localStorage.removeItem('daily_tip')` e força nova chamada
+
+  **Modificar `src/pages/Home.tsx`:**
+
+  ```tsx
+  {
+    localStorage.getItem('simulations') && (
+      <div className="mt-12">
+        <DailyTip />
+      </div>
+    );
+  }
+  ```
+
+  Adicionar entre a hero section e o bloco de tech stack.
+
+---
+
+- [x] **36. Exportar Diagnóstico como PDF**
+
+  **Objetivo:** Botão "Exportar PDF" na página de Resultado que gera PDF com o diagnóstico completo (texto selecionável, não screenshot).
+
+  **Dependência:** `pnpm add jspdf`
+
+  **Arquivo a criar — `src/utils/exportPdf.ts`:**
+  - Função `exportDiagnosisPdf(simulation: SimulationDetails, diagnosis: DiagnosisResponse): Promise<void>`
+  - Usar `jspdf` programaticamente com `doc.setFont`, `doc.setFontSize`, `doc.text`, `doc.line`, `doc.rect`
+  - Estrutura do PDF:
+    1. Cabeçalho: "OrganizAI." bold + "Relatório de Diagnóstico Financeiro" + data
+    2. Linha separadora `doc.line()`
+    3. Perfil: nome, idade, ocupação, objetivo
+    4. Score: "Saúde Financeira: XX/100" + barra desenhada com dois `doc.rect()` (fundo + preenchimento proporcional)
+    5. Diagnóstico geral: `doc.splitTextToSize(texto, 170)` para quebrar linhas
+    6. Pontos fortes: lista com "✓ " prefixando cada item
+    7. Oportunidades: lista com "→ " prefixando cada item
+    8. Plano de ação: numerado, título bold + descrição normal
+    9. Rodapé: "Gerado por OrganizAI"
+  - Cores (RGB para impressão — não usar #c5ff22):
+    - Texto principal: `[30, 30, 46]`
+    - Títulos de seção: `[79, 70, 229]`
+    - Texto secundário: `[71, 85, 105]`
+  - `doc.save(\`organizai-${simulation.profile.name.replace(/\s+/g, '-')}-${simulation.date.replace(/\//g, '-')}.pdf\`)`
+
+  **Modificar `src/pages/Result.tsx`:**
+  - Adicionar `const [isExporting, setIsExporting] = useState(false)` e import de `exportDiagnosisPdf`
+  - No footer de ações, antes dos botões existentes, adicionar quando `diagnosis && !loading`:
+    ```tsx
+    <Button
+      variant="outline"
+      isLoading={isExporting}
+      onClick={async () => {
+        setIsExporting(true);
+        await exportDiagnosisPdf(simulation, diagnosis);
+        setIsExporting(false);
+      }}
+      className="gap-2"
+    >
+      {/* SVG de download inline */}
+      Exportar PDF
+    </Button>
     ```
 
-  - `index.html` — adicionar dentro de `<head>`:
-    ```html
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#c5ff22" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
-    ```
+---
+
+- [x] **37. PWA — Instalação como App**
+
+  **Objetivo:** Tornar o OrganizAI instalável no celular/desktop como PWA.
+
+  **Dependência:** `pnpm add -D vite-plugin-pwa`
+
+  **Arquivo a criar — `public/manifest.json`:**
+
+  ```json
+  {
+    "name": "OrganizAI",
+    "short_name": "OrganizAI",
+    "description": "Educação financeira com IA Generativa",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#030014",
+    "theme_color": "#c5ff22",
+    "icons": [
+      { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+      {
+        "src": "/icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
+      }
+    ]
+  }
+  ```
+
+  Criar `public/icon-192.png` e `public/icon-512.png` — ícones com letras "OA" em `#c5ff22` sobre fundo `#030014` (usar https://favicon.io ou similar).
+
+  **Modificar `vite.config.ts`:**
+
+  ```ts
+  import { VitePWA } from 'vite-plugin-pwa';
+  // em plugins[]:
+  VitePWA({
+    registerType: 'autoUpdate',
+    manifest: false,
+    workbox: { globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'] },
+  });
+  ```
+
+  **Modificar `index.html`** — adicionar em `<head>`:
+
+  ```html
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#c5ff22" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="black-translucent"
+  />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  ```
 
 ---
 
-## 🛠️ Tecnologias Principais
+## 🛠️ Tecnologias do Projeto
 
-- **React 19**
-- **TypeScript**
-- **Tailwind CSS v4**
-- **Google Gemini API** — modelo `gemini-2.5-flash` — IA Generativa gratuita via Google AI Studio
-- **Vite**
-- **ESLint** & **Prettier**
-
----
-
-## 📦 Dependências Adicionais das Novas Fases
-
-| Fase                  | Pacote          | Comando                          | Motivo                                |
-| --------------------- | --------------- | -------------------------------- | ------------------------------------- |
-| 5.5 — Remover API Key | nenhuma         | —                                | Apenas refatora o código existente    |
-| 28 — Gráfico de Score | recharts        | `npm install recharts`           | Gráfico de linha do score             |
-| 29 — Markdown         | react-markdown  | `npm install react-markdown`     | Renderizar diagnóstico formatado      |
-| 33 — Export PDF       | jspdf           | `npm install jspdf`              | Geração de PDF com texto selecionável |
-| 34 — PWA              | vite-plugin-pwa | `npm install -D vite-plugin-pwa` | Service worker + instalação           |
+| Tecnologia              | Versão | Uso                              |
+| ----------------------- | ------ | -------------------------------- |
+| React                   | 19     | UI                               |
+| TypeScript              | ~6.0   | Tipagem                          |
+| Tailwind CSS            | v4     | Estilização                      |
+| Vite                    | 8      | Bundler                          |
+| React Router DOM        | v7     | Roteamento                       |
+| `@google/generative-ai` | ^0.24  | SDK Gemini (usado nas functions) |
+| Vercel Functions        | —      | Proxy serverless para o Gemini   |
 
 ---
 
-## 🗂️ Estrutura de Arquivos após Todas as Fases
+## 📦 Dependências a Instalar por Fase
+
+| Fase | Pacote          | Comando                       |
+| ---- | --------------- | ----------------------------- |
+| 5.5  | @vercel/node    | `pnpm add -D @vercel/node`    |
+| 31   | recharts        | `pnpm add recharts`           |
+| 32   | react-markdown  | `pnpm add react-markdown`     |
+| 36   | jspdf           | `pnpm add jspdf`              |
+| 37   | vite-plugin-pwa | `pnpm add -D vite-plugin-pwa` |
+
+---
+
+## 🗂️ Estrutura de Arquivos Final
 
 ```
-src/
-├── components/
-│   ├── ActionPlanChecklist.tsx     ← NOVO (Fase 6 / item 27)
-│   ├── AiChat.tsx                  ← MODIFICADO (Fase 5.5 / item 25)
-│   ├── ApiKeySetup.tsx             ← DEPRECATED (mantido, não renderizado)
-│   ├── Button.tsx
-│   ├── ChecklistProgressBadge.tsx  ← NOVO (Fase 6 / item 27)
-│   ├── CurrencyInput.tsx
-│   ├── DailyTip.tsx                ← NOVO (Fase 7 / item 32)
-│   ├── FormProgress.tsx
-│   ├── FormStep.tsx
-│   ├── Header.tsx                  ← MODIFICADO (Fase 6 / item 30)
-│   ├── ScoreEvolutionChart.tsx     ← NOVO (Fase 6 / item 28)
-│   └── icons.tsx
-├── constants/
-│   └── goals.ts
-├── hooks/
-│   ├── useApiKey.ts                ← DEPRECATED (mantido com comentário)
-│   ├── useChecklist.ts             ← NOVO (Fase 6 / item 27)
-│   └── useForm.ts                  ← MODIFICADO (Fase 6 / item 31)
-├── pages/
-│   ├── Compare.tsx                 ← NOVO (Fase 6 / item 30)
-│   ├── History.tsx                 ← MODIFICADO (Fases 6 e 7)
-│   ├── Home.tsx                    ← MODIFICADO (Fase 5.5 / item 26 + Fase 7 / item 32)
-│   ├── Result.tsx                  ← MODIFICADO (Fase 5.5 / item 25 + Fases 6 e 7)
-│   └── Simulation.tsx              ← MODIFICADO (Fase 6 / item 31)
-├── services/
-│   ├── dailyTip.ts                 ← NOVO (Fase 7 / item 32)
-│   └── gemini.ts                   ← MODIFICADO (Fase 5.5 / item 25)
-├── types/
-│   └── index.ts
-└── utils/
-    ├── exportPdf.ts                ← NOVO (Fase 7 / item 33)
-    ├── formatters.ts
-    └── prompt.ts                   ← INALTERADO
+/
+├── api/
+│   ├── diagnose.ts             ← NOVO (Fase 5.5)
+│   └── chat.ts                 ← NOVO (Fase 5.5)
+├── public/
+│   ├── manifest.json           ← NOVO (Fase 7)
+│   ├── icon-192.png            ← NOVO (Fase 7)
+│   └── icon-512.png            ← NOVO (Fase 7)
+├── src/
+│   ├── components/
+│   │   ├── ActionPlanChecklist.tsx    ← NOVO (Fase 6)
+│   │   ├── AiChat.tsx                ← MODIFICADO (Fase 5.5)
+│   │   ├── ApiKeySetup.tsx           ← não removido, apenas não renderizado
+│   │   ├── Button.tsx
+│   │   ├── ChecklistProgressBadge.tsx ← NOVO (Fase 6)
+│   │   ├── CurrencyInput.tsx
+│   │   ├── DailyTip.tsx             ← NOVO (Fase 7)
+│   │   ├── FormProgress.tsx
+│   │   ├── FormStep.tsx
+│   │   ├── Header.tsx               ← MODIFICADO (Fase 6)
+│   │   ├── ScoreEvolutionChart.tsx  ← NOVO (Fase 6)
+│   │   └── icons.tsx
+│   ├── constants/goals.ts
+│   ├── hooks/
+│   │   ├── useApiKey.ts             ← não removido, apenas não utilizado
+│   │   ├── useChecklist.ts          ← NOVO (Fase 6)
+│   │   └── useForm.ts               ← MODIFICADO (Fase 6)
+│   ├── pages/
+│   │   ├── Compare.tsx              ← NOVO (Fase 6)
+│   │   ├── History.tsx              ← MODIFICADO (Fases 6 e 7)
+│   │   ├── Home.tsx                 ← MODIFICADO (Fases 5.5 e 7)
+│   │   ├── Result.tsx               ← MODIFICADO (Fases 5.5 e 6)
+│   │   └── Simulation.tsx           ← MODIFICADO (Fase 6)
+│   ├── services/
+│   │   ├── dailyTip.ts              ← NOVO (Fase 7)
+│   │   └── gemini.ts                ← MODIFICADO (Fase 5.5)
+│   ├── types/index.ts
+│   └── utils/
+│       ├── exportPdf.ts             ← NOVO (Fase 7)
+│       ├── formatters.ts
+│       └── prompt.ts                ← INALTERADO
+├── .env.example                     ← MODIFICADO (Fase 5.5)
+├── .env.local                       ← GEMINI_API_KEY (não commitar)
+├── vercel.json                      ← NOVO (Fase 5.5)
+└── vite.config.ts                   ← MODIFICADO (Fase 7)
 ```
 
 ---
 
-## 📋 Convenções do Projeto (para manter consistência)
+## 📋 Convenções do Projeto
 
-**localStorage keys em uso:**
+**localStorage — chaves em uso:**
+| Chave | Conteúdo |
+|---|---|
+| `simulations` | Array de metadados das simulações |
+| `simulation_{id}` | Objeto `SimulationDetails` completo |
+| `diagnosis_{id}` | Objeto `DiagnosisResponse` completo |
+| `checklist_{id}` | `{ [index]: boolean }` — progresso da checklist |
+| `daily_tip` | `{ date: string, tip: string }` — cache da dica diária |
+| `organizai_gemini_api_key` | Obsoleta após Fase 5.5 — não remover para não quebrar dados existentes |
 
-- `simulations` — array de metadados de simulações
-- `simulation_{id}` — objeto `SimulationDetails` completo
-- `diagnosis_{id}` — objeto `DiagnosisResponse` completo
-- `checklist_{id}` — estado da checklist `{ [index]: boolean }` ← NOVO Fase 6
-- `daily_tip` — cache da dica diária `{ date: string, tip: string }` ← NOVO Fase 7
-- `organizai_gemini_api_key` — ← OBSOLETA após Fase 5.5 (não remover para não quebrar dados de usuários existentes que salvaram a chave)
+**Variável de ambiente (servidor):**
 
-**Variável de ambiente:**
-
-- `VITE_GEMINI_API_KEY` — chave da API do Gemini; configurada no `.env.local` para desenvolvimento e no painel do serviço de deploy para produção. **Nunca exposta ao usuário final via UI**
-
-**Como o Gemini é instanciado após a Fase 5.5 (padrão para todos os serviços):**
-
-```ts
-import { GoogleGenerativeAI } from '@google/generative-ai';
-const ai = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-```
-
-Nunca mais receber `apiKey` como parâmetro de função.
+- `GEMINI_API_KEY` — usada apenas dentro das functions em `api/`. Nunca acessar no frontend.
 
 **Paleta de cores (Tailwind tokens):**
 
-- `bg-space-950` / `text-space-950` — `#030014`
-- `text-accent-lime` / `bg-accent-lime` — `#c5ff22`
-- `glass-panel` — classe utilitária com `backdrop-blur` e borda sutil
+- `bg-space-950` / `text-space-950` → `#030014`
+- `text-accent-lime` / `bg-accent-lime` → `#c5ff22`
+- `glass-panel` → classe utilitária com backdrop-blur e borda sutil
 - Animações: `animate-fadeIn`, `animate-float-slow`, `animate-float-medium`, `animate-shake`
 
 **Padrão de componente:**
@@ -686,6 +1019,6 @@ export const MeuComponente: React.FC<MeuComponenteProps> = ({ ... }) => { ... };
 
 **Padrão de serviço (gemini.ts como referência após Fase 5.5):**
 
-- Funções assíncronas puras; API Key lida de `import.meta.env.VITE_GEMINI_API_KEY` internamente
-- Sem estado interno — estado fica nos componentes/hooks
+- `fetch` para `/api/...` — nunca chamar Gemini diretamente do frontend
+- Funções assíncronas puras, sem estado interno
 - Erros propagados com `throw` para o chamador tratar

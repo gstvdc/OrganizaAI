@@ -12,7 +12,6 @@ const HERO_AVATARS = [
   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
 ];
 
-/* ── Shared SVGs used only in widgets ── */
 const IconMic: React.FC<{ className?: string }> = ({ className = 'h-4.5 w-4.5' }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
     <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" />
@@ -37,7 +36,6 @@ const IconCursor: React.FC<{ className?: string }> = ({ className = 'h-4.5 w-4.5
   </svg>
 );
 
-/* ── Shared widget inner content ── */
 const CallWidgetContent: React.FC = () => (
   <>
     <div className="flex items-center justify-between gap-3 bg-white rounded-full pl-3 pr-2 py-1.5 shadow-md">
@@ -45,7 +43,7 @@ const CallWidgetContent: React.FC = () => (
         <img
           className="h-7 w-7 rounded-full border border-slate-200"
           src={AVATAR_GUSTAVO}
-          alt="Gustavo avatar"
+          alt="avatar"
         />
         <span className="text-xs font-bold text-space-950 truncate max-w-[100px]">Gustavo C.</span>
       </div>
@@ -70,9 +68,9 @@ const CallWidgetContent: React.FC = () => (
 const ChecklistWidgetContent: React.FC = () => (
   <>
     <div className="flex items-center justify-between mb-4">
-      <span className="text-xs font-bold tracking-wider text-slate-300">Checklist</span>
-      <span className="text-[9px] font-bold text-slate-400 border border-white/10 rounded-full px-2.5 py-0.5 hover:bg-white/5 cursor-pointer transition-colors">
-        + Add Subtask
+      <span className="text-xs font-bold tracking-wider text-slate-300">Plano de Ação</span>
+      <span className="text-[9px] font-bold text-accent-lime border border-accent-lime/20 rounded-full px-2.5 py-0.5">
+        2/5 feitos
       </span>
     </div>
     <div className="space-y-3.5">
@@ -80,38 +78,52 @@ const ChecklistWidgetContent: React.FC = () => (
         <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-[#536dfe] text-white text-[10px] font-extrabold">
           ✓
         </span>
-        <span className="truncate">Testar viabilidade do orçamento atual.</span>
+        <span className="truncate">Criar reserva de emergência.</span>
       </div>
       <div className="flex items-center gap-2.5 px-4 py-1 text-slate-400 text-[10.5px]">
-        <span className="h-4 w-4 rounded-full border-2 border-white/20 flex-shrink-0" />
-        <span className="truncate">Estudar recomendações de investimentos.</span>
+        <span className="h-4 w-4 rounded-full border-2 border-white/20 shrink-0" />
+        <span className="truncate">Quitar dívidas com juros altos.</span>
       </div>
     </div>
   </>
 );
 
-/* ── Tech stack items ── */
-const TECH_STACK = [
-  { emoji: '✨', label: 'Google Gemini IA' },
-  { emoji: '⚛', label: 'React 19' },
-  { emoji: '🌊', label: 'Tailwind CSS v4' },
-  { emoji: '🛡️', label: 'TypeScript' },
-  { emoji: '⚡', label: 'Vite.js' },
-];
-
-/* ── Roadmap items ── */
-const ROADMAP_ITEMS = [
+const FEATURES = [
   {
-    title: '✓ Simulador Financeiro',
-    desc: 'Formulário de 6 etapas com análise dinâmica de orçamento em tempo real.',
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    ),
+    title: 'Simule em minutos',
+    desc: 'Preencha receitas, gastos fixos, variáveis e dívidas em 6 passos guiados. Veja sua saúde financeira em tempo real enquanto digita.',
+    color: 'text-violet-400',
+    border: 'border-violet-500/15',
+    bg: 'bg-violet-500/5',
   },
   {
-    title: '✓ Diagnóstico com IA',
-    desc: 'Integração com Google Gemini para gerar insights e plano de ação personalizados — sem configuração necessária.',
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+      </svg>
+    ),
+    title: 'Diagnóstico com IA',
+    desc: 'O Google Gemini analisa toda a sua situação e gera um score de saúde financeira, pontos fortes, oportunidades e um plano de ação personalizado.',
+    color: 'text-accent-lime',
+    border: 'border-accent-lime/15',
+    bg: 'bg-accent-lime/5',
   },
   {
-    title: '✓ Histórico & Chat IA',
-    desc: 'Histórico completo de simulações e chat de acompanhamento com contexto financeiro.',
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+      </svg>
+    ),
+    title: 'Acompanhe sua evolução',
+    desc: 'Histórico de simulações com gráfico de evolução do score, checklist interativa do plano de ação e comparação lado a lado entre períodos.',
+    color: 'text-emerald-400',
+    border: 'border-emerald-500/15',
+    bg: 'bg-emerald-500/5',
   },
 ];
 
@@ -120,17 +132,14 @@ export const Home: React.FC = () => {
     <div className="relative overflow-hidden pt-12 pb-24 sm:pt-20 sm:pb-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-        {/* Hero — centered text with absolutely-positioned desktop widgets */}
+        {/* Hero */}
         <div className="relative z-10 flex flex-col items-center justify-center min-h-[550px] py-12 w-full">
 
-          {/* Centered text */}
           <div className="text-center space-y-6 max-w-3xl mx-auto z-20 flex flex-col items-center">
-            <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4.5 py-1 text-xs font-semibold text-slate-300 backdrop-blur-md">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent-lime animate-pulse" />
-                Inteligência Artificial & Educação Financeira
-              </span>
-            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-semibold text-slate-300 backdrop-blur-md">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent-lime animate-pulse" />
+              Educação Financeira com Inteligência Artificial
+            </span>
 
             <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl md:text-7xl leading-tight">
               Sua
@@ -141,7 +150,7 @@ export const Home: React.FC = () => {
                       key={i}
                       className="inline-block h-5.5 w-5.5 rounded-full ring-2 ring-[#030014]"
                       src={src}
-                      alt={`User ${i + 1}`}
+                      alt=""
                     />
                   ))}
                 </div>
@@ -154,26 +163,25 @@ export const Home: React.FC = () => {
             </h1>
 
             <p className="text-sm text-slate-400 max-w-xl leading-relaxed mx-auto">
-              Mapeie sua renda, gastos fixos e variáveis em minutos. Receba um diagnóstico completo
-              gerado por IA com score de saúde financeira, pontos fortes e um plano de ação
-              personalizado para alcançar seus objetivos.
+              Mapeie suas finanças em minutos e receba um diagnóstico completo gerado por IA — com
+              score de saúde financeira, pontos fortes e um plano de ação personalizado.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
               <Link to="/simulacao" className="w-full sm:w-auto">
                 <Button size="lg" variant="primary" className="w-full">
-                  Começar Agora
+                  Começar Agora — é grátis
                 </Button>
               </Link>
-              <a href="#roadmap" className="w-full sm:w-auto">
+              <Link to="/historico" className="w-full sm:w-auto">
                 <Button size="lg" variant="outline" className="w-full">
-                  Como Funciona
+                  Ver Histórico
                 </Button>
-              </a>
+              </Link>
             </div>
           </div>
 
-          {/* Desktop widgets — absolutely positioned on left / right */}
+          {/* Desktop widgets */}
           <div className="hidden lg:block glass-panel absolute left-[-60px] xl:left-[-140px] top-[15%] z-10 w-[260px] rounded-3xl p-4 shadow-2xl animate-float-slow bg-space-950/40 rotate-[-6deg] hover:rotate-0 hover:scale-102 hover:z-30 transition-all duration-300">
             <CallWidgetContent />
             <div className="absolute -bottom-6 left-6 z-30 inline-flex items-center gap-1">
@@ -195,12 +203,12 @@ export const Home: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile widgets — in-flow grid below hero text */}
+        {/* Mobile widgets */}
         <div className="lg:hidden mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto px-4">
-          <div className="glass-panel w-full rounded-3xl p-4 shadow-xl bg-space-950/40 rotate-[-2deg] relative">
+          <div className="glass-panel w-full rounded-3xl p-4 shadow-xl bg-space-950/40 rotate-[-2deg]">
             <CallWidgetContent />
           </div>
-          <div className="glass-panel w-full rounded-3xl p-4 shadow-xl bg-space-950/40 rotate-[2deg] relative">
+          <div className="glass-panel w-full rounded-3xl p-4 shadow-xl bg-space-950/40 rotate-[2deg]">
             <ChecklistWidgetContent />
           </div>
         </div>
@@ -212,48 +220,44 @@ export const Home: React.FC = () => {
           </div>
         )}
 
-        {/* Tech stack */}
-        <div className="mt-20 border-t border-white/5 pt-12">
-          <p className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-6">
-            Desenvolvido com Tecnologias de Ponta
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 md:justify-between px-4">
-            {TECH_STACK.map(({ emoji, label }) => (
+        {/* Features */}
+        <div id="como-funciona" className="mt-24">
+          <div className="text-center mb-12">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3">
+              Como funciona
+            </p>
+            <h2 className="text-2xl font-extrabold text-white sm:text-3xl">
+              Da simulação ao plano de ação
+            </h2>
+            <p className="mt-3 text-sm text-slate-400 max-w-xl mx-auto">
+              Tudo que você precisa para entender e melhorar sua saúde financeira, em um só lugar.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            {FEATURES.map(({ icon, title, desc, color, border, bg }) => (
               <div
-                key={label}
-                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors duration-300 cursor-pointer"
+                key={title}
+                className={`rounded-2xl border ${border} ${bg} p-6 transition-all duration-300 hover:scale-[1.02]`}
               >
-                <span className="text-lg">{emoji}</span>
-                <span className="font-semibold tracking-tight text-sm">{label}</span>
+                <div className={`mb-4 ${color}`}>{icon}</div>
+                <h3 className="mb-2 font-bold text-white">{title}</h3>
+                <p className="text-xs leading-relaxed text-slate-400">{desc}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Roadmap */}
-        <div
-          id="roadmap"
-          className="mt-24 rounded-3xl border border-white/5 bg-white/[0.01] p-8 backdrop-blur-md shadow-2xl relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 -z-10 h-[200px] w-[200px] rounded-full bg-violet-600/5 blur-[50px]" />
-          <h2 className="text-2xl font-bold tracking-tight text-white">
-            Status do Roadmap do Projeto
-          </h2>
-          <p className="mt-2 text-slate-400 text-sm">
-            Todas as fases iniciais e integrações estão ativas e padronizadas no novo design
-            system.
+        {/* CTA final */}
+        <div className="mt-20 text-center">
+          <Link to="/simulacao">
+            <Button size="lg" variant="primary">
+              Fazer minha primeira simulação
+            </Button>
+          </Link>
+          <p className="mt-3 text-xs text-slate-600">
+            Gratuito · Sem cadastro · Dados salvos localmente
           </p>
-          <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-            {ROADMAP_ITEMS.map(({ title, desc }) => (
-              <div
-                key={title}
-                className="rounded-xl border border-white/5 bg-white/[0.02] p-4 hover:border-white/10 transition-colors"
-              >
-                <div className="mb-1 font-semibold text-accent-lime">{title}</div>
-                <p className="text-xs text-slate-400">{desc}</p>
-              </div>
-            ))}
-          </div>
         </div>
 
       </div>

@@ -66,7 +66,7 @@ export const ScoreEvolutionChart: React.FC<ScoreEvolutionChartProps> = ({ simula
                 fontSize: '12px',
               }}
               labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
-              formatter={(value: number) => [`${value}/100`, 'Score']}
+              formatter={(value) => [`${value}/100`, 'Score']}
             />
             <Line
               type="monotone"

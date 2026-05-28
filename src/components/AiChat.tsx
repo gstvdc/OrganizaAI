@@ -71,7 +71,7 @@ export const AiChat: React.FC<AiChatProps> = ({ simulation, diagnosis, isDemoMod
         <IconSparkles className="h-8 w-8 text-slate-600" />
         <p className="text-sm font-semibold text-slate-300">Chat indisponível no modo demo</p>
         <p className="text-xs text-slate-500 max-w-xs">
-          Configure a <code className="font-mono">VITE_GEMINI_API_KEY</code> para conversar com a IA sobre sua situação financeira real.
+          O serviço de IA não está disponível no momento. O chat funciona quando o diagnóstico é gerado com sucesso.
         </p>
       </div>
     );
