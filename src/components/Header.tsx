@@ -22,7 +22,13 @@ export const Header: React.FC = () => {
     : BASE_NAV_LINKS;
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-transparent">
+    <header
+      className={`sticky top-0 z-40 w-full transition-all duration-300 ${
+        mobileOpen
+          ? 'bg-space-950/95 backdrop-blur-lg'
+          : 'bg-transparent'
+      }`}
+    >
       <div className="py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo */}
@@ -81,42 +87,38 @@ export const Header: React.FC = () => {
 
             {/* Hamburger button — mobile only */}
             <button
-              className="flex items-center justify-center rounded-lg p-2 text-slate-300 transition-colors hover:bg-white/5 hover:text-white md:hidden"
+              className={`flex items-center justify-center rounded-lg p-2 transition-all duration-200 md:hidden ${
+                mobileOpen
+                  ? 'bg-white/10 text-white'
+                  : 'text-slate-300 hover:bg-white/5 hover:text-white'
+              }`}
               onClick={() => setMobileOpen((prev) => !prev)}
               aria-label={mobileOpen ? 'Fechar menu' : 'Abrir menu'}
               aria-expanded={mobileOpen}
             >
-              {mobileOpen ? (
-                /* X icon */
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                /* Hamburger icon */
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
+              {/* Animated hamburger → X */}
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="transition-all duration-300 origin-center"
+                  d={mobileOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
+                />
+              </svg>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu overlay */}
-      {mobileOpen && (
-        <div className="absolute left-0 right-0 top-full z-50 border-b border-white/5 bg-space-950/95 backdrop-blur-lg md:hidden">
+      {/* Mobile menu — always rendered, animated with max-h + opacity */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out md:hidden ${
+          mobileOpen
+            ? 'max-h-125 opacity-100'
+            : 'max-h-0 opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="border-t border-white/5">
           <nav className="mx-auto flex max-w-7xl flex-col px-4 py-3 sm:px-6">
             {NAV_LINKS.map((link) => (
               <NavLink
@@ -141,9 +143,9 @@ export const Header: React.FC = () => {
               </NavLink>
             ))}
 
-            {/* Mobile CTA — only shown when not on /simulacao */}
+            {/* Mobile CTA */}
             {!isSimulacao && (
-              <div className="mt-2 border-t border-white/5 pt-3">
+              <div className="mt-2 border-t border-white/5 pt-3 pb-1">
                 <Link to="/simulacao" onClick={() => setMobileOpen(false)}>
                   <Button size="sm" variant="secondary" className="flex w-full items-center justify-center gap-1.5">
                     Simular Já
@@ -162,7 +164,7 @@ export const Header: React.FC = () => {
             )}
           </nav>
         </div>
-      )}
+      </div>
     </header>
   );
 };
