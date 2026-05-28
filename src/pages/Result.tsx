@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { AiChat } from '../components/AiChat';
@@ -25,10 +25,11 @@ export const Result: React.FC = () => {
     return raw ? JSON.parse(raw) : null;
   });
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(() => !!id && !localStorage.getItem(`diagnosis_${id}`));
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const fetchCalledRef = useRef(false);
 
   const fetchDiagnosis = async (simData: SimulationDetails) => {
     setLoading(true);
@@ -49,7 +50,8 @@ export const Result: React.FC = () => {
   };
 
   useEffect(() => {
-    if (simulation && !diagnosis) {
+    if (simulation && !diagnosis && !fetchCalledRef.current) {
+      fetchCalledRef.current = true;
       fetchDiagnosis(simulation);
     }
   }, [simulation]);
@@ -151,7 +153,7 @@ export const Result: React.FC = () => {
         {finances.targetGoal && finances.targetGoal.name && (
           <div className="mt-8 border-t border-white/5 pt-8">
             <h4 className="text-base font-bold text-white mb-4">
-              🎯 Objetivo Específico: {finances.targetGoal.name}
+              Objetivo Específico: {finances.targetGoal.name}
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-4 rounded-xl border border-white/5 bg-white/[0.01] space-y-2.5">
