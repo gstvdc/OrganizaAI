@@ -36,8 +36,9 @@
   body {
     @apply text-white font-sans antialiased selection:bg-accent-lime selection:text-black;
     background-color: #030014;
-    overflow-x: hidden;
-    /* Ensure body fills the full screen height including safe areas on iOS */
+    /* clip doesn't create a scroll container, so position:fixed still covers
+       the full screen including safe areas on iOS Safari */
+    overflow-x: clip;
     min-height: 100dvh;
   }
 

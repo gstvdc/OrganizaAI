@@ -21,7 +21,7 @@ export const BaseLayout: React.FC = () => {
   const { pathname } = useLocation();
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-transparent text-white font-sans antialiased">
+    <div className="relative flex min-h-screen flex-col bg-transparent text-white font-sans antialiased" style={{ overflowX: 'clip' }}>
       {pathname === '/' && <MeshGradientBackground />}
       <StaticBackground />
       <Header />
