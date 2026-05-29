@@ -150,7 +150,7 @@ export const exportDiagnosisPdf = async (
   sectionTitle('Pontos Fortes');
 
   diagnosis.pontosFortes.forEach((item) => {
-    const itemLines = doc.splitTextToSize(`✓  ${item}`, contentW);
+    const itemLines = doc.splitTextToSize(`+  ${item}`, contentW);
     checkPageBreak(itemLines.length * 6 + 4);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
@@ -168,7 +168,7 @@ export const exportDiagnosisPdf = async (
   sectionTitle('Oportunidades de Melhoria');
 
   diagnosis.oportunidadesMelhoria.forEach((item) => {
-    const itemLines = doc.splitTextToSize(`→  ${item}`, contentW);
+    const itemLines = doc.splitTextToSize(`!  ${item}`, contentW);
     checkPageBreak(itemLines.length * 6 + 4);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
